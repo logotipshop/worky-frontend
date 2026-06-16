@@ -1,4 +1,3 @@
-import axios from 'axios';
 import React, { useState, useEffect } from "react";
 import { initializeApp } from "firebase/app";
 import { getDatabase, ref, onValue } from "firebase/database";
