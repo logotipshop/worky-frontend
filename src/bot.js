@@ -8,7 +8,7 @@ from aiogram.utils import executor
 
 # Backend API va Bot Tokeni
 API_URL = "https://worky-backend-ubwp.onrender.com"
-BOT_TOKEN = "7123456789:ABCdefGhIJKlmNoPQRsTUVwXyZ"  # O'zingning bot tokeningni shu yerga qo'yasan
+BOT_TOKEN = "8774789236:AAEiyfMt8rJ0QTmNMLX4A3DMx1ALJo0au-8"  #
 
 logging.basicConfig(level=logging.INFO)
 bot = Bot(token=BOT_TOKEN)
