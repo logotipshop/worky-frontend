@@ -20,8 +20,8 @@ const firebaseConfig = {
 const firebaseApp = initializeApp(firebaseConfig);
 const db = getDatabase(firebaseApp);
 
-// Botni yaratish
-const bot = new Telegraf("8774789236:AAE0ED0DMAaaKMmFHYt69eAPHbw5yFj6Bdc");
+// === YaNGI TOZA TOKEN SHU YERGA QO'YILDI ===
+const bot = new Telegraf("8774789236:AAGBx7Zq9BaW6IBudZfm9O4Cv-t6MaffCBM");
 
 const regionsData = {
   tashkent_sh: { name: "Toshkent sh.", districts: ["Yunusobod", "Chilonzor", "Mirzo Ulug'bek", "Yashnobod", "Sergeli", "Boshqa"] },
@@ -40,7 +40,6 @@ const regionsData = {
   karakalpakstan: { name: "Qoraqalpog'iston", districts: ["Nukus sh.", "Xo'jayli", "Qo'ng'irot", "Beruniy", "Boshqa"] }
 };
 
-// WIZARD SCENE (Faqat biz yozgan xabarlar chiqadi, begona havola bo'lishi imkonsiz)
 const registerWizard = new Scenes.WizardScene(
   'REGISTER_SCENE',
 
@@ -189,7 +188,7 @@ const stage = new Scenes.Stage([registerWizard]);
 bot.use(session());
 bot.use(stage.middleware());
 
-// Bot Start komandasi - Reklamalardan TOZA, Sening sayt havolang bilan uzoqlashtirilgan
+// Bot Start komandasi - Sening shaxsiy render sayting bog'landi
 bot.start(async (ctx) => {
   const telegramId = ctx.from.id;
   try {
@@ -207,7 +206,7 @@ bot.start(async (ctx) => {
         `🌟 **PRO sotib olish:**\n` +
         `💳 Karta: \`8600123456789012\` (Temur)\n` +
         `💰 Narxi: 25,000 so'm\n\n` +
-        `To'lov qilib, chekni va ID-ni @logotipshop10 ga tashlang!`;
+        `To'lov qibly, chekni va ID-ni @logotipshop10 ga tashlang!`;
 
       await ctx.replyWithMarkdownV2(
         text.replace(/\./g, '\\.').replace(/-/g, '\\-').replace(/\!/g, '\\!'),
@@ -226,7 +225,7 @@ app.listen(PORT, () => console.log(`Server port: ${PORT}`));
 
 bot.launch().then(() => console.log("Worky Bot muvaffaqiyatli yurdi!"));
 
-// Faqat terminalga xato chiqarish, hech qanday kanal reklama havolasi yo'q!
+// Faqat terminalga xato chiqarish
 bot.catch((err, ctx) => {
   console.error(`🚨 Xato:`, err);
 });
