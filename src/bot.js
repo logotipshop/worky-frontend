@@ -18,7 +18,7 @@ const db = getDatabase(firebaseApp);
 
 // 2. Botni yangi token bilan yaratish
 // Eslatgandek, agarda boshqa joyda bot yoniq bo'lsa @BotFather'dan tokenni yangilab, shu yerga qo'y!
-const bot = new Telegraf("523843560168:AA...");
+const bot = new Telegraf("8774789236:AAEiyfMt8rJ0QTmNMLX4A3DMx1ALJo0au-8");
 
 // 3. RO'YXATDAN O'TISH SAHNASI (WIZARD SCENE)
 const registerWizard = new Scenes.WizardScene(
