@@ -3,11 +3,10 @@ import { initializeApp } from "firebase/app";
 import { getDatabase, ref, set, get } from "firebase/database";
 import express from 'express';
 
-// Express server sozlamalari (Render Timed Out xatosini yo'qotish uchun)
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// 1. Firebase Konfiguratsiyasi
+// Firebase Konfiguratsiyasi
 const firebaseConfig = {
   apiKey: "AIzaSyAjssn3vbS0l_GJoJeV-HrGg1NTUKLou6U",
   authDomain: "worky-2d426.firebaseapp.com",
@@ -21,10 +20,9 @@ const firebaseConfig = {
 const firebaseApp = initializeApp(firebaseConfig);
 const db = getDatabase(firebaseApp);
 
-// 2. Botni xavfsiz token bilan yaratish
+// Botni yaratish
 const bot = new Telegraf("8774789236:AAE0ED0DMAaaKMmFHYt69eAPHbw5yFj6Bdc");
 
-// Viloyatlar va ularga tegishli tumanlar ma'lumotlar bazasi
 const regionsData = {
   tashkent_sh: { name: "Toshkent sh.", districts: ["Yunusobod", "Chilonzor", "Mirzo Ulug'bek", "Yashnobod", "Sergeli", "Boshqa"] },
   tashkent_v: { name: "Toshkent vil.", districts: ["Chirchiq", "Angren", "Olmaliq", "Bekabad", "Qibray", "Boshqa"] },
@@ -42,100 +40,78 @@ const regionsData = {
   karakalpakstan: { name: "Qoraqalpog'iston", districts: ["Nukus sh.", "Xo'jayli", "Qo'ng'irot", "Beruniy", "Boshqa"] }
 };
 
-// 3. RO'YXATDAN O'TISH SAHNASI (WIZARD SCENE)
+// WIZARD SCENE (Faqat biz yozgan xabarlar chiqadi, begona havola bo'lishi imkonsiz)
 const registerWizard = new Scenes.WizardScene(
   'REGISTER_SCENE',
 
-  // 1-Qadam: Ism so'rash
+  // 1-Qadam
   async (ctx) => {
-    await ctx.reply(
-      "👋 Worky platformasiga xush kelibsiz!\n\n" +
-      "Kunlik va smenali ishlarni topish hamda ishchilarni yollash tizimi.\n\n" +
-      "Ro'yxatdan o'tishni boshlash uchun iltimos, Ism va Familiyangizni kiriting:"
-    );
+    await ctx.reply("👋 Worky platformasiga xush kelibsiz!\n\nRo'yxatdan o'tish uchun Ism va Familiyangizni kiriting:");
     return ctx.wizard.next();
   },
 
-  // 2-Qadam: Ismni saqlash va Rol tanlash
+  // 2-Qadam
   async (ctx) => {
     if (!ctx.message || !ctx.message.text) {
-      await ctx.reply("Iltimos, ism va familiyangizni matn ko'rinishida kiriting:");
+      await ctx.reply("Iltimos, ismingizni matn ko'rinishida yozing:");
       return;
     }
     ctx.wizard.state.name = ctx.message.text;
-
     await ctx.reply(
-      "Rahmat! Endi platformadan foydalanish maqsadingizni (rolingizni) tanlang:",
+      "Rahmat! Rolingizni tanlang:",
       Markup.inlineKeyboard([
-        [Markup.button.callback("👷 Men Ishchiman (Ish qidiraman)", "role:worker")],
-        [Markup.button.callback("💼 Men Ish beruvchiman (Xodim qidiraman)", "role:employer")]
+        [Markup.button.callback("👷 Ishchiman", "role:worker")],
+        [Markup.button.callback("💼 Ish beruvchiman", "role:employer")]
       ])
     );
     return ctx.wizard.next();
   },
 
-  // 3-Qadam: Rolni qabul qilish va Telefon so'rash
+  // 3-Qadam
   async (ctx) => {
     if (!ctx.callbackQuery) {
-      await ctx.reply("Iltimos, pastdagi tugmalardan birini tanlang:");
+      await ctx.reply("Tugmalardan birini tanlang:");
       return;
     }
-    const role = ctx.callbackQuery.data.split(':')[1];
-    ctx.wizard.state.role = role;
+    ctx.wizard.state.role = ctx.callbackQuery.data.split(':')[1];
     await ctx.answerCbQuery();
-
     await ctx.reply(
-      "Ajoyib! Endi senga aloqaga chiqishlari uchun telefon raqamingni yubor:",
-      Markup.keyboard([
-        [Markup.button.contactRequest("📱 Telefon raqamni yuborish")]
-      ]).resize().oneTime()
+      "Telefon raqamingizni pastdagi tugma orqali yuboring:",
+      Markup.keyboard([[Markup.button.contactRequest("📱 Telefon raqamni yuborish")]]).resize().oneTime()
     );
     return ctx.wizard.next();
   },
 
-  // 4-Qadam: Telefonni qabul qilish va FOYDALANISH QOIDALARINI ko'rsatish
+  // 4-Qadam
   async (ctx) => {
     if (!ctx.message || (!ctx.message.contact && !ctx.message.text)) {
-      await ctx.reply("Iltimos, raqamni yuborish tugmasini bosing yoki raqamingizni yozing:");
+      await ctx.reply("Iltimos, telefon raqamni yuborish tugmasini bosing:");
       return;
     }
-    const phone = ctx.message.contact ? ctx.message.contact.phone_number : ctx.message.text;
-    ctx.wizard.state.phone = phone;
+    ctx.wizard.state.phone = ctx.message.contact ? ctx.message.contact.phone_number : ctx.message.text;
 
-    // Worky platformasining foydalanish qoidalari matni
-    const rulesText =
-      "⚠️ **Worky platformasidan foydalanish qoidalari:**\n\n" +
-      "1. Kelishilgan ish vaqtida va joyida vaqtida hozir bo'lish majburiy.\n" +
-      "2. Ish beruvchi va ishchi o'rtasidagi kelishuvlar halol va shaffof bo'lishi shart.\n" +
-      "3. Platformada yolg'on e'lon berish yoki haqoratli so'zlardan foydalanish qat'iyan man etiladi.\n" +
-      "4. To'lovlar tizim qoidalariga muvofiq o'z vaqtida amalga oshirilishi lozim.\n\n" +
-      "Davom etish uchun shartlarni qabul qilishingiz kerak.";
-
-    await ctx.reply(
-      rulesText,
-      Markup.inlineKeyboard([
-        [Markup.button.callback("✅ Shartlarni qabul qilaman", "rules:accept")],
-        [Markup.button.callback("❌ Rad etish", "rules:decline")]
-      ])
-    );
+    const rulesText = "⚠️ **Worky qoidalari:**\n\n1. Halol va o'z vaqtida ishlash shart.\n2. Yolg'on e'lonlar taqiqlanadi.\n\nDavom etish uchun shartlarni qabul qiling:";
+    await ctx.reply(rulesText, Markup.inlineKeyboard([
+      [Markup.button.callback("✅ Qabul qilaman", "rules:accept")],
+      [Markup.button.callback("❌ Rad etaman", "rules:decline")]
+    ]));
     return ctx.wizard.next();
   },
 
-  // 5-Qadam: Qoidalarni tekshirish va BARCHA VILOYATLARNI ko'rsatish
+  // 5-Qadam
   async (ctx) => {
     if (!ctx.callbackQuery) {
-      await ctx.reply("Iltimos, pastdagi tugma orqali shartlarni qabul qiling:");
+      await ctx.reply("Shartlarni tugma orqali qabul qiling:");
       return;
     }
-    const rulesStatus = ctx.callbackQuery.data.split(':')[1];
+    const status = ctx.callbackQuery.data.split(':')[1];
     await ctx.answerCbQuery();
 
-    if (rulesStatus === 'decline') {
-      await ctx.reply("Siz shartlarni rad etdingiz. Platformadan foydalanish uchun ro'yxatdan qayta o'ting va shartlarni qabul qiling. /start");
+    if (status === 'decline') {
+      await ctx.reply("Shartlar rad etildi. Qayta ro'yxatdan o'tish: /start");
       return ctx.scene.leave();
     }
 
-    // O'zbekistonning barcha hududlari tugmalari
     const regionButtons = [
       [Markup.button.callback("Toshkent sh.", "reg:tashkent_sh"), Markup.button.callback("Toshkent vil.", "reg:tashkent_v")],
       [Markup.button.callback("Farg'ona", "reg:fergana"), Markup.button.callback("Andijon", "reg:andijan")],
@@ -145,154 +121,115 @@ const registerWizard = new Scenes.WizardScene(
       [Markup.button.callback("Surxondaryo", "reg:surkhandarya"), Markup.button.callback("Jizzax", "reg:jizzakh")],
       [Markup.button.callback("Sirdaryo", "reg:syrdarya"), Markup.button.callback("Qoraqalpog'iston", "reg:karakalpakstan")]
     ];
-
-    await ctx.reply("Rahmat! Endi viloyatingizni tanlang:", Markup.inlineKeyboard(regionButtons));
+    await ctx.reply("Viloyatingizni tanlang:", Markup.inlineKeyboard(regionButtons));
     return ctx.wizard.next();
   },
 
-  // 6-Qadam: Viloyatni qabul qilib, unga mos TUMANLARNI ko'rsatish
+  // 6-Qadam
   async (ctx) => {
     if (!ctx.callbackQuery) {
-      await ctx.reply("Iltimos, viloyatni tugma orqali tanlang:");
+      await ctx.reply("Viloyatni tanlang:");
       return;
     }
     const regionKey = ctx.callbackQuery.data.split(':')[1];
     const selectedRegion = regionsData[regionKey];
-
-    if (!selectedRegion) {
-      await ctx.reply("Xatolik yuz berdi. Qaytadan viloyatni tanlang:");
-      return;
-    }
+    if (!selectedRegion) return ctx.reply("Xatolik. Qaytadan urining: /start");
 
     ctx.wizard.state.region = selectedRegion.name;
     await ctx.answerCbQuery();
 
-    // Tanlangan viloyatning tumanlaridan tugmalar yasash
     const districtButtons = [];
     for (let i = 0; i < selectedRegion.districts.length; i += 2) {
       const row = [Markup.button.callback(selectedRegion.districts[i], `dist:${selectedRegion.districts[i]}`)];
-      if (selectedRegion.districts[i + 1]) {
-        row.push(Markup.button.callback(selectedRegion.districts[i + 1], `dist:${selectedRegion.districts[i + 1]}`));
-      }
+      if (selectedRegion.districts[i + 1]) row.push(Markup.button.callback(selectedRegion.districts[i + 1], `dist:${selectedRegion.districts[i + 1]}`));
       districtButtons.push(row);
     }
-
-    await ctx.reply(`${selectedRegion.name} viloyati tanlandi. Endi tumaningizni tanlang:`, Markup.inlineKeyboard(districtButtons));
+    await ctx.reply("Tumaningizni tanlang:", Markup.inlineKeyboard(districtButtons));
     return ctx.wizard.next();
   },
 
-  // 7-Qadam: Tumanni qabul qilish, Firebase'ga yozish va ID bilan yakunlash
+  // 7-Qadam
   async (ctx) => {
     if (!ctx.callbackQuery) {
-      await ctx.reply("Iltimos, tumaningizni tugma orqali tanlang:");
+      await ctx.reply("Tumanni tanlang:");
       return;
     }
     const districtName = ctx.callbackQuery.data.split(':')[1];
-    ctx.wizard.state.district = districtName;
     await ctx.answerCbQuery();
 
     const telegramId = ctx.from.id;
-
-    // YaNGI FOYDALANUVChI DATA JADVALI (PRO o'zgaruvchilari frontend uchun qo'shildi)
     const userData = {
       telegramId: telegramId,
       name: ctx.wizard.state.name,
       role: ctx.wizard.state.role,
       phone: ctx.wizard.state.phone,
       region: ctx.wizard.state.region,
-      district: ctx.wizard.state.district,
-      isPro: false,        // Boshlanishida oddiy akkaunt bo'ladi
-      proExpireAt: "",     // Muddat hozircha bo'sh
+      district: districtName,
+      isPro: false,
+      proExpireAt: "",
       createdAt: new Date().toISOString()
     };
 
     try {
-      // Firebase Realtime Database'ga saqlash
       await set(ref(db, 'users/' + telegramId), userData);
-
-      // Muvaffaqiyatli yakunlash xabari va Worky ID taqdim etish
       await ctx.reply(
-        "🎉 Tabriklayman, ro'yxatdan muvaffaqiyatli o'tdingiz!\n\n" +
-        `🆔 Sizning Worky ID: ${telegramId}\n` +
-        `👤 Ism: ${userData.name}\n` +
-        `💼 Rol: ${userData.role === 'worker' ? 'Ishchi' : 'Ish beruvchi'}\n` +
-        `📍 Hudud: ${userData.region}, ${userData.district}\n` +
-        `📱 Tel: ${userData.phone}\n\n` +
-        "🌐 Endi Worky saytiga kirib, yuqoridagi ID raqamingiz orqali profilingizni ochishingiz va ishlardan foydalanishni boshlashingiz mumkin!",
-        Markup.removeKeyboard()
+        "🎉 Ro'yxatdan muvaffaqiyatli o'tdingiz!\n\n" +
+        `🆔 Worky ID: ${telegramId}\n\n` +
+        "🌐 Quyidagi tugma orqali saytga o'tib ID raqamingizni kiriting:",
+        Markup.inlineKeyboard([[Markup.button.url("🌐 Worky Saytiga Kirish", "https://worky-0g13.onrender.com/")]])
       );
-    } catch (error) {
-      await ctx.reply("Ma'lumotlarni saqlashda xatolik yuz berdi. Qayta urinib ko'ring.");
+    } catch (e) {
+      await ctx.reply("Xatolik yuz berdi. Qayta urining: /start");
     }
-
     return ctx.scene.leave();
   }
 );
 
-// 4. Stage va Session sozlamalari
 const stage = new Scenes.Stage([registerWizard]);
 bot.use(session());
 bot.use(stage.middleware());
 
-// 5. Bot Start komandasi (Avval ro'yxatdan o'tgan bo'lsa PRO olish yo'riqnomasini ko'rsatadi)
+// Bot Start komandasi - Reklamalardan TOZA, Sening sayt havolang bilan uzoqlashtirilgan
 bot.start(async (ctx) => {
   const telegramId = ctx.from.id;
-
   try {
-    const userRef = ref(db, `users/${telegramId}`);
-    const snapshot = await get(userRef);
-
-    // Agar foydalanuvchi bazada bor bo'lsa, qayta ro'yxatdan o'tkazmaymiz! Profilini ko'rsatamiz:
+    const snapshot = await get(ref(db, `users/${telegramId}`));
     if (snapshot.exists()) {
       const userData = snapshot.val();
+      const proStatus = userData.isPro ? `✅ Faol (Muddati: ${userData.proExpireAt})` : "❌ Faol emas (Oddiy)";
 
-      let proStatusText = "❌ Faol emas (Oddiy Akkaunt)";
-      if (userData.isPro) {
-        proStatusText = `✅ Faol (Tugash muddati: ${userData.proExpireAt})`;
-      }
-
-      const profileMenu =
-        `👤 **Sizning Worky Profilingiz:**\n\n` +
-        `🆔 Worky ID: \`${telegramId}\` (Saytga kirish uchun xizmat qiladi)\n` +
+      const text =
+        `👤 **Worky Profilingiz:**\n\n` +
+        `🆔 Worky ID: \`${telegramId}\`\n` +
         `📝 Ism: ${userData.name}\n` +
         `💼 Rol: ${userData.role === 'worker' ? 'Ishchi' : 'Ish beruvchi'}\n` +
-        `👑 PRO Holati: ${proStatusText}\n\n` +
-        `-------------------------\n` +
-        `🌟 **PRO premium akkaunt sotib olish yo'riqnomasi:**\n\n` +
-        `Saytdagi barcha xizmatlar, xodimlarning telefon raqamlari va qidiruv tizimlarini to'liq ochish uchun PRO statusga o'ting!\n\n` +
-        `💳 **Karta raqami (Temur):** \`8600123456789012\`\n` +
-        `💰 Narxi: 1 oyga 25,000 so'm\n\n` +
-        `To'lovni amalga oshirib, chekni (skrinshotni) shaxsan menga 👉 @logotipshop10 profilingiz ID raqami bilan birga yuboring. Tez fursatda akkauntingizni faollashtiraman!`;
+        `👑 PRO Holati: ${proStatus}\n\n` +
+        `🌟 **PRO sotib olish:**\n` +
+        `💳 Karta: \`8600123456789012\` (Temur)\n` +
+        `💰 Narxi: 25,000 so'm\n\n` +
+        `To'lov qilib, chekni va ID-ni @logotipshop10 ga tashlang!`;
 
-      await ctx.replyWithMarkdownV2(profileMenu.replace(/\./g, '\\.').replace(/-/g, '\\-').replace(/\!/g, '\\!'));
+      await ctx.replyWithMarkdownV2(
+        text.replace(/\./g, '\\.').replace(/-/g, '\\-').replace(/\!/g, '\\!'),
+        Markup.inlineKeyboard([[Markup.button.url("🌐 Worky Saytiga Kirish", "https://worky-0g13.onrender.com/")]])
+      );
     } else {
-      // Agar bazada yo'q bo'lsa, ro'yxatdan o'tish sahnasiga kiradi
       ctx.scene.enter('REGISTER_SCENE');
     }
-  } catch (error) {
+  } catch (e) {
     ctx.scene.enter('REGISTER_SCENE');
   }
 });
 
-// 6. Express Web Server yo'laklari (Render port xatosini yo'qotish uchun)
-app.get('/', (req, res) => {
-  res.send('Worky Bot is Running Successfully!');
-});
+app.get('/', (req, res) => res.send('Worky Bot Active'));
+app.listen(PORT, () => console.log(`Server port: ${PORT}`));
 
-app.listen(PORT, () => {
-  console.log(`Server is running on port ${PORT}`);
-});
+bot.launch().then(() => console.log("Worky Bot muvaffaqiyatli yurdi!"));
 
-// 7. Botni ishga tushirish
-bot.launch().then(() => {
-  console.log("Worky Telegram Bot muvaffaqiyatli ishga tushdi!");
-});
-
-// Xatoliklarni tutish va logga chiqarish (Yashirin reklamalardan 100% TOZA)
+// Faqat terminalga xato chiqarish, hech qanday kanal reklama havolasi yo'q!
 bot.catch((err, ctx) => {
-  console.error(`🚨 Botda xatolik yuz berdi: ${ctx.updateType}`, err);
+  console.error(`🚨 Xato:`, err);
 });
 
-// Tizim to'xtatilganda ulanishni xavfsiz yopish
 process.once('SIGINT', () => bot.stop('SIGINT'));
 process.once('SIGTERM', () => bot.stop('SIGTERM'));
