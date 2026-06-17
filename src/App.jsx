@@ -23,7 +23,6 @@ export default function App() {
   const [isAdmin, setIsAdmin] = useState(false);
   const [loginError, setLoginError] = useState('');
 
-  // Bazadan rang va shriftni o'qib, saytga qo'llash
   useEffect(() => {
     onValue(ref(db, 'settings/theme'), (snapshot) => {
       const data = snapshot.val();
@@ -31,7 +30,6 @@ export default function App() {
         if (data.primaryColor) document.documentElement.style.setProperty('--main-color', data.primaryColor);
         if (data.backgroundColor) document.documentElement.style.setProperty('--bg-color', data.backgroundColor);
 
-        // Agar bazada shrift bo'lsa, uni yuklash va butun sayt body qismiga berish
         if (data.fontFamily) {
           const fontLink = document.getElementById('google-font-link');
           if (fontLink) {
@@ -84,7 +82,6 @@ export default function App() {
 
   return (
     <div style={styles.loginContainer}>
-      {/* Google Fonts uchun dinamik havola */}
       <link id="google-font-link" rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;700&display=swap" />
 
       <div style={styles.loginCard}>
@@ -281,7 +278,7 @@ function Dashboard({ user, onLogout }) {
 function AdminPanel({ onLogout }) {
   const [primaryColor, setPrimaryColor] = useState('#007bff');
   const [backgroundColor, setBackgroundColor] = useState('#f4f6f9');
-  const [selectedFont, setSelectedFont] = useState('Inter'); // Default shrift
+  const [selectedFont, setSelectedFont] = useState('Inter');
   const [reports, setReports] = useState([]);
   const [proUserId, setProUserId] = useState('');
 
@@ -292,7 +289,6 @@ function AdminPanel({ onLogout }) {
       else setReports([]);
     });
 
-    // Avval saqlangan dizayn qiymatlarini admin paneldagi inputlarga o'rnatish
     get(ref(db, 'settings/theme')).then((snapshot) => {
       if(snapshot.exists()) {
         const val = snapshot.val();
@@ -303,14 +299,9 @@ function AdminPanel({ onLogout }) {
     });
   }, []);
 
-  // DIZAYN VA SHRIFTNI BAZAGA SAQLASH
   const handleThemeSave = async (e) => {
     e.preventDefault();
-    await set(ref(db, 'settings/theme'), {
-      primaryColor,
-      backgroundColor,
-      fontFamily: selectedFont // Tanlangan shriftni saqlaymiz
-    });
+    await set(ref(db, 'settings/theme'), { primaryColor, backgroundColor, fontFamily: selectedFont });
     alert('Dizayn va Shrift muvaffaqiyatli saqlandi!');
   };
 
@@ -331,9 +322,9 @@ function AdminPanel({ onLogout }) {
   };
 
   const handleAcceptReport = async (reportId) => {
-    if (window.confirm("Arizani o'chirmoqchimisiz?")) {
+    if (window.confirm("Arizani ro'yxatdan o'chirib, qabul qilmoqchimisiz?")) {
       await remove(ref(db, `reports/${reportId}`));
-      alert("Ariza o'chirildi!");
+      alert("Ariza ko'rib chiqildi va tizimdan o'chirildi!");
     }
   };
 
@@ -345,33 +336,40 @@ function AdminPanel({ onLogout }) {
       </div>
 
       <div style={styles.adminGrid}>
+        {/* 1. PRO Tariflarni boshqarish */}
         <div style={{...styles.adminCard, borderTop: '5px solid #2ecc71'}}>
-          <h3>👑 PRO Aktivlashtirish</h3>
+          <h3>👑 PRO Aktivlashtirish Sozlamalari</h3>
           <form onSubmit={handleActivatePro} style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-            <input type="text" placeholder="Worky ID..." value={proUserId} onChange={(e) => setProUserId(e.target.value)} style={styles.inputField} />
+            <input type="text" placeholder="Foydalanuvchi Worky ID..." value={proUserId} onChange={(e) => setProUserId(e.target.value)} style={styles.inputField} />
             <button type="submit" style={styles.saveStyleBtn}>✅ PRO Berish (30 kun)</button>
           </form>
         </div>
 
-        <div style={{...styles.adminCard, borderTop: '5px solid #e74c3c'}}>
-          <h3>🚨 Kelgan Shikoyat arizalari</h3>
-          {reports.length === 0 ? <p>Hozircha shikoyatlar yo'q.</p> : (
+        {/* 2. ARIZALAR SOZLAMALARI BLOKI (SHU YERDA) */}
+        <div style={{...styles.adminCard, borderTop: '5px solid #e74c3c', backgroundColor: '#fffafa'}}>
+          <h3 style={{color: '#d9534f'}}>🚨 Arizalar Sozlamalari & Shikoyatlar</h3>
+          <p style={{fontSize: '13px', color: '#666'}}>Foydalanuvchilar tomonidan yuborilgan barcha shikoyat arizalari ro'yxati:</p>
+          <hr style={{border: '0.5px solid #f2dede', margin: '10px 0'}} />
+
+          {reports.length === 0 ? (
+            <p style={{color: '#777', fontStyle: 'italic', textAlign: 'center', marginTop: '20px'}}>Hozircha hech qanday kelib tushgan ariza mavjud emas.</p>
+          ) : (
             reports.map(rep => (
               <div key={rep.id} style={styles.reportCard}>
                 <p><b>Kimdan:</b> {rep.reporterName} (ID: {rep.reporterId})</p>
-                <p><b>Qoidabuzar:</b> <span style={{ color: 'red', fontWeight: 'bold' }}>{rep.accusedId}</span></p>
-                <p><b>Sababi:</b> {rep.reason}</p>
-                <button onClick={() => handleAcceptReport(rep.id)} style={{...styles.adminLogoutBtn, backgroundColor: '#2ecc71', padding: '5px 10px', fontSize: '12px', marginTop: '10px', width: '100%'}}>
-                  ✅ Arizani Qabul Qilish (O'chirish)
+                <p><b>Qoidabuzar ID:</b> <span style={{ color: 'red', fontWeight: 'bold' }}>{rep.accusedId}</span></p>
+                <p><b>Ariza sababi:</b> {rep.reason}</p>
+                <button onClick={() => handleAcceptReport(rep.id)} style={{...styles.adminLogoutBtn, backgroundColor: '#2ecc71', padding: '6px 12px', fontSize: '13px', marginTop: '10px', width: '100%'}}>
+                  ✅ Arizani Qabul Qilish (Baza va Ro'yxatdan O'chirish)
                 </button>
               </div>
             ))
           )}
         </div>
 
-        {/* === YaNGILANGAN DIZAYN VA SHRIFT PANELI === */}
+        {/* 3. Rang va Shrift Sozlamalari */}
         <div style={styles.adminCard}>
-          <h3>🎨 Dizayn va Shrift sozlamalari</h3>
+          <h3>🎨 Stil & Shrift Sozlamalari</h3>
           <form onSubmit={handleThemeSave} style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
             <div>
               <label style={{fontSize: '14px', fontWeight: '500'}}>Asosiy Rang:</label>
@@ -383,7 +381,6 @@ function AdminPanel({ onLogout }) {
               <input type="color" value={backgroundColor} onChange={(e) => setBackgroundColor(e.target.value)} style={styles.colorInput} />
             </div>
 
-            {/* === SHRIFT TANLASH DROPDOWN MENUSI === */}
             <div>
               <label style={{fontSize: '14px', fontWeight: '500'}}>Sayt Shrifti (Font Family):</label>
               <select value={selectedFont} onChange={(e) => setSelectedFont(e.target.value)} style={{...styles.inputField, width: '100%', marginTop: '5px'}}>
