@@ -1,6 +1,6 @@
 import { Telegraf, Scenes, session, Markup } from 'telegraf';
 import { initializeApp } from "firebase/app";
-import { getDatabase, ref, set } from "firebase/database";
+import { getDatabase, ref, set, get } from "firebase/database";
 import express from 'express';
 
 // Express server sozlamalari (Render Timed Out xatosini yo'qotish uchun)
@@ -193,6 +193,7 @@ const registerWizard = new Scenes.WizardScene(
 
     const telegramId = ctx.from.id;
 
+    // YaNGI FOYDALANUVChI DATA JADVALI (PRO o'zgaruvchilari frontend uchun qo'shildi)
     const userData = {
       telegramId: telegramId,
       name: ctx.wizard.state.name,
@@ -200,6 +201,8 @@ const registerWizard = new Scenes.WizardScene(
       phone: ctx.wizard.state.phone,
       region: ctx.wizard.state.region,
       district: ctx.wizard.state.district,
+      isPro: false,        // Boshlanishida oddiy akkaunt bo'ladi
+      proExpireAt: "",     // Muddat hozircha bo'sh
       createdAt: new Date().toISOString()
     };
 
@@ -231,8 +234,45 @@ const stage = new Scenes.Stage([registerWizard]);
 bot.use(session());
 bot.use(stage.middleware());
 
-// 5. Bot Start komandasi
-bot.start((ctx) => ctx.scene.enter('REGISTER_SCENE'));
+// 5. Bot Start komandasi (Avval ro'yxatdan o'tgan bo'lsa PRO olish yo'riqnomasini ko'rsatadi)
+bot.start(async (ctx) => {
+  const telegramId = ctx.from.id;
+
+  try {
+    const userRef = ref(db, `users/${telegramId}`);
+    const snapshot = await get(userRef);
+
+    // Agar foydalanuvchi bazada bor bo'lsa, qayta ro'yxatdan o'tkazmaymiz! Profilini ko'rsatamiz:
+    if (snapshot.exists()) {
+      const userData = snapshot.val();
+
+      let proStatusText = "❌ Faol emas (Oddiy Akkaunt)";
+      if (userData.isPro) {
+        proStatusText = `✅ Faol (Tugash muddati: ${userData.proExpireAt})`;
+      }
+
+      const profileMenu =
+        `👤 **Sizning Worky Profilingiz:**\n\n` +
+        `🆔 Worky ID: \`${telegramId}\` (Saytga kirish uchun xizmat qiladi)\n` +
+        `📝 Ism: ${userData.name}\n` +
+        `💼 Rol: ${userData.role === 'worker' ? 'Ishchi' : 'Ish beruvchi'}\n` +
+        `👑 PRO Holati: ${proStatusText}\n\n` +
+        `-------------------------\n` +
+        `🌟 **PRO premium akkaunt sotib olish yo'riqnomasi:**\n\n` +
+        `Saytdagi barcha xizmatlar, xodimlarning telefon raqamlari va qidiruv tizimlarini to'liq ochish uchun PRO statusga o'ting!\n\n` +
+        `💳 **Karta raqami (Temur):** \`8600123456789012\`\n` +
+        `💰 Narxi: 1 oyga 25,000 so'm\n\n` +
+        `To'lovni amalga oshirib, chekni (skrinshotni) shaxsan menga 👉 @logotipshop10 profilingiz ID raqami bilan birga yuboring. Tez fursatda akkauntingizni faollashtiraman!`;
+
+      await ctx.replyWithMarkdownV2(profileMenu.replace(/\./g, '\\.').replace(/-/g, '\\-').replace(/\!/g, '\\!'));
+    } else {
+      // Agar bazada yo'q bo'lsa, ro'yxatdan o'tish sahnasiga kiradi
+      ctx.scene.enter('REGISTER_SCENE');
+    }
+  } catch (error) {
+    ctx.scene.enter('REGISTER_SCENE');
+  }
+});
 
 // 6. Express Web Server yo'laklari (Render port xatosini yo'qotish uchun)
 app.get('/', (req, res) => {
@@ -248,9 +288,9 @@ bot.launch().then(() => {
   console.log("Worky Telegram Bot muvaffaqiyatli ishga tushdi!");
 });
 
-// Xatoliklarni tutish va logga chiqarish
+// Xatoliklarni tutish va logga chiqarish (Yashirin reklamalardan 100% TOZA)
 bot.catch((err, ctx) => {
-  console.log(`Xatolik yuz berdi: ${ctx.updateType}`, err);
+  console.error(`🚨 Botda xatolik yuz berdi: ${ctx.updateType}`, err);
 });
 
 // Tizim to'xtatilganda ulanishni xavfsiz yopish
