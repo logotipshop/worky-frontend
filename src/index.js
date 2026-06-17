@@ -1,6 +1,6 @@
 import React from 'react';
 import ReactDOM from 'react-dom/client';
-import App from './App';
+import App from './App.jsx'; // 👈 Oxiriga .jsx (yoki fayling .js bo'lsa .js) qo'shib qo'y!
 
 const root = ReactDOM.createRoot(document.getElementById('root'));
 root.render(
