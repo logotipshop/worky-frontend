@@ -1,6 +1,11 @@
 import { Telegraf, Scenes, session, Markup } from 'telegraf';
 import { initializeApp } from "firebase/app";
 import { getDatabase, ref, set } from "firebase/database";
+import express from 'express';
+
+// Express server sozlamalari (Render Timed Out xatosini yo'qotish uchun)
+const app = express();
+const PORT = process.env.PORT || 3000;
 
 // 1. Firebase Konfiguratsiyasi
 const firebaseConfig = {
@@ -16,8 +21,7 @@ const firebaseConfig = {
 const firebaseApp = initializeApp(firebaseConfig);
 const db = getDatabase(firebaseApp);
 
-// 2. Botni yangi token bilan yaratish
-// Eslatgandek, agarda boshqa joyda bot yoniq bo'lsa @BotFather'dan tokenni yangilab, shu yerga qo'y!
+// 2. Botni xavfsiz token bilan yaratish
 const bot = new Telegraf("8774789236:AAE0ED0DMAaaKMmFHYt69eAPHbw5yFj6Bdc");
 
 // 3. RO'YXATDAN O'TISH SAHNASI (WIZARD SCENE)
@@ -118,7 +122,7 @@ const registerWizard = new Scenes.WizardScene(
         `Rol: ${userData.role === 'worker' ? 'Ishchi' : 'Ish beruvchi'}\n` +
         `Tel: ${userData.phone}\n\n` +
         "Worky saytiga kirib profilingizni ko'rishingiz mumkin!",
-        Markup.removeKeyboard() // Klaviaturani tozalaydi
+        Markup.removeKeyboard()
       );
     } catch (error) {
       await ctx.reply("Xatolik yuz berdi. Qayta urinib ko'ring.");
@@ -128,24 +132,33 @@ const registerWizard = new Scenes.WizardScene(
   }
 );
 
-// 4. Stage yaratish va Session ulash
+// 4. Stage va Session sozlamalari
 const stage = new Scenes.Stage([registerWizard]);
 bot.use(session());
 bot.use(stage.middleware());
 
-// 5. Global Komandalar
+// 5. Bot Start komandasi
 bot.start((ctx) => ctx.scene.enter('REGISTER_SCENE'));
 
-// Bot xatoliklarini ushlash (Reklama yashirinib qolmasligi uchun)
-bot.catch((err, ctx) => {
-  console.log(`Ooops, xatolik yuz berdi: ${ctx.updateType}`, err);
+// 6. Express Web Server yo'laklari (Render port qidirganda shu ishlaydi)
+app.get('/', (req, res) => {
+  res.send('Worky Bot is Running Successfully!');
 });
 
-// Botni ishga tushirish
+app.listen(PORT, () => {
+  console.log(`Server is running on port ${PORT}`);
+});
+
+// 7. Botni ishga tushirish
 bot.launch().then(() => {
   console.log("Worky Telegram Bot muvaffaqiyatli ishga tushdi!");
 });
 
-// To'g'ri o'chirish jarayoni
+// Xatoliklarni tutish va logga chiqarish
+bot.catch((err, ctx) => {
+  console.log(`Xatolik yuz berdi: ${ctx.updateType}`, err);
+});
+
+// Tizim to'xtatilganda ulanishni xavfsiz yopish
 process.once('SIGINT', () => bot.stop('SIGINT'));
 process.once('SIGTERM', () => bot.stop('SIGTERM'));
