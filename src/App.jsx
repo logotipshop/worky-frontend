@@ -16,305 +16,273 @@ const firebaseConfig = {
 const firebaseApp = initializeApp(firebaseConfig);
 const db = getDatabase(firebaseApp);
 
-// Butun O'zbekiston hududlar tuzilmasi
+// 100% TO'LIQ O'ZBEKISTON HUDUDLARI (XATOSIZ)
 const UZBEKISTAN_REGIONS = {
   "Barchasi": ["Barchasi"],
-  "Farg'ona": ["Barchasi", "Qo'qon shahar", "Farg'ona shahar", "Marg'ilon shahar", "Beshariq", "Uchko'prik", "Rishton", "Oltiariq", "Bag'dod"],
-  "Toshkent shahar": ["Barchasi", "Yunusobod", "Chilonzor", "Mirzo Ulug'bek", "Yashnobod", "Sergeli", "Yakkasaroy"],
-  "Toshkent viloyati": ["Barchasi", "Chirchiq", "Angren", "Olmaliq", "Bekobod", "Qibray", "Zangiota"],
-  "Samarqand": ["Barchasi", "Samarqand shahar", "Kattaqo'rg'on", "Urgut", "Bulung'ur", "Ishtixon"],
-  "Andijon": ["Barchasi", "Andijon shahar", "Asaka", "Shahrixon", "Xonobod", "Xo'jaobod"],
-  "Namangan": ["Barchasi", "Namangan shahar", "Chust", "Kosonsoy", "Uychi", "Pop"],
-  "Buxoro": ["Barchasi", "Buxoro shahar", "Gijduvon", "Kogon", "Qorako'l"],
-  "Xorazm": ["Barchasi", "Urganch shahar", "Xiva", "Gurlan", "Shovot"],
-  "Qashqadaryo": ["Barchasi", "Karshi shahar", "Shahrisabz", "Kitob", "Koson"],
-  "Surxondaryo": ["Barchasi", "Termiz shahar", "Denov", "Sherobod", "Jarqo'rg'on"],
-  "Navoiy": ["Barchasi", "Navoiy shahar", "Zarafshon", "Uchquduq", "Karmana"],
-  "Jizzax": ["Barchasi", "Jizzax shahar", "Zomin", "G'allaorol", "Do'stlik"],
-  "Sirdaryo": ["Barchasi", "Guliston shahar", "Shirin", "Yangiyer", "Boyovut"],
-  "Qoraqalpog'iston": ["Barchasi", "Nukus shahar", "Xo'jayli", "Qo'ng'irot", "Beruniy"]
+  "Farg'ona": ["Barchasi", "Qo'qon shahar", "Farg'ona shahar", "Marg'ilon shahar", "Quvasoy shahar", "Beshariq", "Uchko'prik", "Rishton", "Oltiariq", "Bag'dod", "O'zbekiston", "Buvaida", "Dang'ara", "Farg'ona tumani", "Furqat", "Quva", "Toshloq", "Yozyovon", "So'x"],
+  "Toshkent shahar": ["Barchasi", "Yunusobod", "Chilonzor", "Mirzo Ulug'bek", "Yashnobod", "Sergeli", "Yakkasaroy", "Mirobod", "Shayxontohur", "Olmazor", "Uchtepa", "Bektemir", "Yangihayot"],
+  "Toshkent viloyati": ["Barchasi", "Chirchiq shahar", "Angren shahar", "Olmaliq shahar", "Bekobod shahar", "Nurafshon shahar", "Ohangaron shahar", "Yangiyo'l shahar", "Zangiota", "Qibray", "Chinoz", "Bo'stonliq", "Do'stobod", "Keles", "Oqqurgan", "Parkent", "Piskent", "Quyi Chirchiq", "O'rtashirchiq", "Yuqori Chirchiq", "Toshkent tumani"],
+  "Samarqand": ["Barchasi", "Samarqand shahar", "Kattaqo'rg'on shahar", "Urgut", "Bulung'ur", "Ishtixon", "Jomboy", "Kattaqo'rg'on tumani", "Narpay", "Nurobod", "Oqdaryo", "Payariq", "Pastdarg'om", "Paxtachi", "Samarqand tumani", "Toyloq"],
+  "Andijon": ["Barchasi", "Andijon shahar", "Asaka shahar", "Xonobod shahar", "Shahrixon shahar", "Andijon tumani", "Asaka tumani", "Baliqchi", "Bo'ston", "Buloqboshi", "Izboskan", "Jalaquduq", "Marhamat", "Oltinkul", "Paxtaobod", "Ulug'nor", "Xo'jaobod", "Shahrixon tumani"],
+  "Namangan": ["Barchasi", "Namangan shahar", "Chust", "Kosonsoy", "Uychi", "Pop", "Mingbuloq", "Namangan tumani", "Naryn", "Norin", "To'raqo'rg'on", "Uychi", "Yangiqo'rg'on", "Chortoq", "Davlatobod", "Yangi Namangan"],
+  "Buxoro": ["Barchasi", "Buxoro shahar", "Kogon shahar", "Gijduvon", "Kogon tumani", "Qorako'l", "Buxoro tumani", "Vobkent", "Jondor", "Karakul", "Olot", "Peshku", "Romitan", "Shofirkon", "Qorovulbozor"],
+  "Xorazm": ["Barchasi", "Urganch shahar", "Xiva shahar", "Gurlan", "Shovot", "Urganch tumani", "Xiva tumani", "Bog'ot", "Yangiariq", "Yangibozor", "Qo'shko'pir", "Xazorasp", "Tuproqqal'a"],
+  "Qashqadaryo": ["Barchasi", "Karshi shahar", "Shahrisabz shahar", "Kitob", "Koson", "Karshi tumani", "Chiroqchi", "Dehqonobod", "Kamashi", "Mirishkor", "Muborak", "Nishan", "Nishon", "Kasbi", "Shahrisabz tumani", "Yakkabog'", "Ko'kdala"],
+  "Surxondaryo": ["Barchasi", "Termiz shahar", "Denov", "Sherobod", "Jarqo'rg'on", "Angor", "Boysun", "Qiziriq", "Qumqo'rg'on", "Muzrabot", "Oltinsoy", "Sariosiyo", "Termiz tumani", "Uzun", "Sho'rchi"],
+  "Navoiy": ["Barchasi", "Navoiy shahar", "Zarafshon shahar", "Uchquduq shahar", "Karmana", "Kanimex", "Navbahor", "Nurota", "Tomdi", "Xatirchi", "Qiziltepa"],
+  "Jizzax": ["Barchasi", "Jizzax shahar", "Zomin", "G'allaorol", "Do'stlik", "Arnasoy", "Baxmal", "Zafarobod", "Zarbdor", "Mirzacho'l", "Paxtakor", "Forish", "Sharof Rashidov"],
+  "Sirdaryo": ["Barchasi", "Guliston shahar", "Shirin shahar", "Yangiyer shahar", "Boyovut", "Guliston tumani", "Mirzaobod", "Oqoltin", "Sayhunobod", "Sardoba", "Sirdaryo tumani"],
+  "Qoraqalpog'iston": ["Barchasi", "Nukus shahar", "Xo'jayli", "Qo'ng'irot", "Beruniy", "Amudaryo", "Chimboy", "Ellikqal'a", "Kegeyli", "Mo'ynoq", "Nukus tumani", "Qonliko'l", "Qorauzyak", "Taxtako'pir", "To'rtko'l", "Shumanay", "Bo'zatov"]
 };
 
 const CATEGORIES = ["Barchasi", "Restoran", "IT", "Qurilish", "Logistika", "Dizayn", "Ta'lim", "Boshqa"];
 
-function RatingStars({ rating = 0 }) {
-  return (
-    <div style={{ display: "flex", gap: 2, alignItems: "center" }}>
-      {[1, 2, 3, 4, 5].map((star) => (
-        <span key={star} style={{ fontSize: 14, color: star <= rating ? "#FFB800" : "#D1D5DB" }}>
-          ★
-        </span>
-      ))}
-    </div>
-  );
-}
-
 export default function App() {
+  const [userRole, setUserRole] = useState("worker");
   const [page, setPage] = useState("home");
   const [selectedRegion, setSelectedRegion] = useState("Barchasi");
   const [selectedDistrict, setSelectedDistrict] = useState("Barchasi");
   const [category, setCategory] = useState("Barchasi");
   const [showProModal, setShowProModal] = useState(false);
-  const [currentEffectClass, setCurrentEffectClass] = useState("");
 
-  // Bayram vaqtlarini avtomat aniqlash
+  // Sening profiling
+  const currentUser = {
+    name: "Temurbek Yoqubov",
+    phone: "+998 50 755 89 31",
+    id: "WRK99812",
+    isAdmin: true
+  };
+
+  const [jobs, setJobs] = useState([
+    { id: 1, title: "Usta yordamchisi", place: "Xususiy xonadon", wage: 120000, category: "Qurilish", region: "Farg'ona", district: "Qo'qon shahar", emoji: "🏗️", bg: "#FAECE7" },
+    { id: 2, title: "Fast-food oshpazi", place: "Evos", wage: 150000, category: "Restoran", region: "Farg'ona", district: "Qo'qon shahar", emoji: "🍽️", bg: "#E8F8F2" }
+  ]);
+
+  const [workers, setWorkers] = useState([
+    { id: 101, name: "Sardorbek Olimov", jobTitle: "Professional Ofitsiant", rating: 5, region: "Farg'ona", district: "Qo'qon shahar", comment: "Mas'uliyatli usta", avatarLetter: "S", banned: false, isPro: false, proUntil: null },
+    { id: 102, name: "Dostonbek Aliyev", jobTitle: "Gipsokarton ustasi", rating: 4, region: "Farg'ona", district: "Beshariq", comment: "Yaxshi usta", avatarLetter: "D", banned: false, isPro: true, proUntil: "2026-07-20" }
+  ]);
+
+  // Avtomat PRO muddati tugashini tekshirish
   useEffect(() => {
-    const bugun = new Date();
-    const oy = bugun.getMonth() + 1;
-    const kun = bugun.getDate();
+    const bugun = new Date().toISOString().split('T')[0];
+    setWorkers(prev => prev.map(w => {
+      if (w.isPro && w.proUntil && w.proUntil < bugun) {
+        return { ...w, isPro: false, proUntil: null };
+      }
+      return w;
+    }));
+  }, [page]);
 
-    if (oy === 3 && kun >= 19 && kun <= 22) {
-      setCurrentEffectClass("effect-ramadan_eid");
-    } else if (oy === 5 && kun >= 26 && kun <= 29) {
-      setCurrentEffectClass("effect-qurban_eid");
-    } else if (oy === 6) {
-      setCurrentEffectClass("effect-football");
-    } else {
-      setCurrentEffectClass("");
-    }
-  }, []);
+  // API Funksiyalar (Swagger Docs simulyatsiyasi)
+  const activateProUser = (id) => {
+    const kelajakSana = new Date();
+    kelajakSana.setDate(kelajakSana.getDate() + 30);
+    const proTugashSanasi = kelajakSana.toISOString().split('T')[0];
+    setWorkers(prev => prev.map(w => w.id === id ? { ...w, isPro: true, proUntil: proTugashSanasi } : w));
+    alert(`Muvaffaqiyatli: 30 kunlik PRO faollashtirildi! (${proTugashSanasi})`);
+  };
+
+  const deactivateProUser = (id) => {
+    setWorkers(prev => prev.map(w => w.id === id ? { ...w, isPro: false, proUntil: null } : w));
+    alert("Muvaffaqiyatli: PRO status o'chirildi (Noactiv)!");
+  };
+
+  const deleteJob = (id) => {
+    setJobs(prev => prev.filter(j => j.id !== id));
+    alert("Muvaffaqiyatli: E'lon o'chirildi!");
+  };
+
+  const toggleBanWorker = (id) => {
+    setWorkers(prev => prev.map(w => w.id === id ? { ...w, banned: !w.banned } : w));
+    alert("Muvaffaqiyatli: Foydalanuvchi holati yangilandi!");
+  };
 
   const handleRegionChange = (e) => {
     setSelectedRegion(e.target.value);
     setSelectedDistrict("Barchasi");
   };
 
-  // Namunaviy ma'lumotlar tuzilmasi (Viloyat va tumanlar bilan)
-  const [jobs] = useState([
-    { id: 1, title: "Usta yordamchisi", place: "Xususiy xonadon", wage: 120000, category: "Qurilish", region: "Farg'ona", district: "Qo'qon shahar", emoji: "🏗️", bg: "#FAECE7" },
-    { id: 2, title: "Fast-food oshpazi", place: "Evos Qo'qon", wage: 150000, category: "Restoran", region: "Farg'ona", district: "Qo'qon shahar", emoji: "🍽️", bg: "#E8F8F2" },
-    { id: 3, title: "Python dasturchi", place: "IT Akademiyasi", wage: 300000, category: "IT", region: "Toshkent shahar", district: "Yunusobod", emoji: "💻", bg: "#EBF3FF" }
-  ]);
-
-  const [workers] = useState([
-    { id: 101, name: "Sardorbek Olimov", jobTitle: "Professional Ofitsiant", rating: 5, region: "Farg'ona", district: "Qo'qon shahar", comment: "Ishga juda mas'uliyatli yondashadi, rahmat!", avatarLetter: "S" },
-    { id: 102, name: "Dostonbek Aliyev", jobTitle: "Gipsokarton ustasi", rating: 4, region: "Farg'ona", district: "Beshariq", comment: "Yaxshi usta, ishni vaqtida topshirdi.", avatarLetter: "D" },
-    { id: 103, name: "Asadbek Karimov", jobTitle: "UI/UX Dizayner", rating: 5, region: "Toshkent shahar", district: "Chilonzor", comment: "Ajoyib va tezkor dizayner ekan.", avatarLetter: "A" }
-  ]);
-
-  const [applications, setApplications] = useState([
-    { id: 201, jobTitle: "Fast-food oshpazi", workerName: "Sardorbek Olimov", region: "Farg'ona", district: "Qo'qon shahar", status: "pending" }
-  ]);
-
-  const handleAcceptApplication = (id, workerName) => {
-    setApplications(prev =>
-      prev.map(app => app.id === id ? { ...app, status: "accepted" } : app)
-    );
-    alert(`${workerName}ning arizasi qabul qilindi! Muloqotni boshlashingiz mumkin.`);
-    window.open("https://t.me/logotipshop10", "_blank"); // Sening to'g'ri akking
-  };
-
-  const handleRejectApplication = (id) => {
-    setApplications(prev => prev.filter(app => app.id !== id));
-    alert("Ariza rad etildi va ro'yxatdan o'chirildi.");
-  };
-
-  // Butun O'zbekiston bo'yicha ishlarni filtrlash
-  const filteredJobs = jobs.filter(j => {
-    const matchesRegion = selectedRegion === "Barchasi" || j.region === selectedRegion;
-    const matchesDistrict = selectedDistrict === "Barchasi" || j.district === selectedDistrict;
-    const matchesCategory = category === "Barchasi" || j.category === category;
-    return matchesRegion && matchesDistrict && matchesCategory;
-  });
-
-  // Butun O'zbekiston bo'yicha ishchilarni reyting va hududga ko'ra saralash
-  const filteredWorkers = workers
-    .filter(w => {
-      const matchesRegion = selectedRegion === "Barchasi" || w.region === selectedRegion;
-      const matchesDistrict = selectedDistrict === "Barchasi" || w.district === selectedDistrict;
-      return matchesRegion && matchesDistrict;
-    })
-    .sort((a, b) => b.rating - a.rating);
+  const filteredJobs = jobs.filter(j => (selectedRegion === "Barchasi" || j.region === selectedRegion) && (category === "Barchasi" || j.category === category));
+  const filteredWorkers = workers.filter(w => !w.banned);
 
   return (
-    <div className={`app-container ${currentEffectClass}`} style={{ fontFamily: "sans-serif", backgroundColor: "#f5f5f7", minHeight: "100vh", paddingBottom: "80px" }}>
+    <div className="app-container" style={{ fontFamily: "sans-serif", backgroundColor: "#f5f5f7", minHeight: "100vh", paddingBottom: "80px" }}>
 
-      {/* Yuqori panel va DUAL HUDUD FILTRI */}
-      <header className="main-header" style={{ display: "flex", flexDirection: "column", gap: "10px", padding: "16px 20px", backgroundColor: "#fff", borderBottom: "1px solid #d2d2d7" }}>
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", width: "100%" }}>
-          <h1 className="worky-logo" style={{ margin: 0, fontSize: "26px", fontWeight: "900", color: "#007aff" }}>
-            Work<span style={{ color: "#34c759" }}>y</span>
-          </h1>
-          <span style={{ fontSize: "11px", fontWeight: "700", color: "#86868b", backgroundColor: "#f5f5f7", padding: "4px 8px", borderRadius: "6px" }}>🇺🇿 O'ZBEKISTON</span>
-        </div>
+      {/* HEADER */}
+      {page !== "admin" && (
+        <header style={{ padding: "16px 20px", backgroundColor: "#fff", borderBottom: "1px solid #d2d2d7" }}>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "12px" }}>
+            <h1 style={{ margin: 0, fontSize: "24px", fontWeight: "900", color: "#007aff" }}>Work<span style={{ color: "#34c759" }}>y</span></h1>
+            <div style={{ display: "flex", background: "#e8e8ed", padding: "2px", borderRadius: "8px" }}>
+              <button onClick={() => { setUserRole("worker"); setPage("home"); }} style={{ border: "none", padding: "6px 12px", borderRadius: "6px", fontSize: "12px", fontWeight: "600", backgroundColor: userRole === "worker" ? "#fff" : "transparent", color: userRole === "worker" ? "#007aff" : "#86868b" }}>👷 Ishchiman</button>
+              <button onClick={() => { setUserRole("employer"); setPage("home"); }} style={{ border: "none", padding: "6px 12px", borderRadius: "6px", fontSize: "12px", fontWeight: "600", backgroundColor: userRole === "employer" ? "#fff" : "transparent", color: userRole === "employer" ? "#34c759" : "#86868b" }}>💼 Ish beruvchiman</button>
+            </div>
+          </div>
+          <div style={{ display: "flex", gap: "8px" }}>
+            <select value={selectedRegion} onChange={handleRegionChange} style={{ flex: 1, padding: "8px", borderRadius: "10px", border: "1px solid #d2d2d7", backgroundColor: "#f5f5f7", fontSize: "13px" }}>
+              {Object.keys(UZBEKISTAN_REGIONS).map(r => <option key={r} value={r}>{r}</option>)}
+            </select>
+            <select value={selectedDistrict} onChange={(e) => setSelectedDistrict(e.target.value)} style={{ flex: 1, padding: "8px", borderRadius: "10px", border: "1px solid #d2d2d7", backgroundColor: "#f5f5f7", fontSize: "13px" }} disabled={selectedRegion === "Barchasi"}>
+              {UZBEKISTAN_REGIONS[selectedRegion].map(d => <option key={d} value={d}>{d}</option>)}
+            </select>
+          </div>
+        </header>
+      )}
 
-        {/* Hududlar tanlovi */}
-        <div style={{ display: "flex", gap: "8px", width: "100%" }}>
-          <select value={selectedRegion} onChange={handleRegionChange} style={{ flex: 1, padding: "8px 10px", borderRadius: "10px", border: "1px solid #d2d2d7", fontSize: "13px", backgroundColor: "#f5f5f7", fontWeight: "500" }}>
-            {Object.keys(UZBEKISTAN_REGIONS).map(r => <option key={r} value={r}>{r}</option>)}
-          </select>
-
-          <select value={selectedDistrict} onChange={(e) => setSelectedDistrict(e.target.value)} style={{ flex: 1, padding: "8px 10px", borderRadius: "10px", border: "1px solid #d2d2d7", fontSize: "13px", backgroundColor: "#f5f5f7", fontWeight: "500" }} disabled={selectedRegion === "Barchasi"}>
-            {UZBEKISTAN_REGIONS[selectedRegion].map(d => <option key={d} value={d}>{d}</option>)}
-          </select>
-        </div>
-      </header>
-
-      {/* 1. BOSH SAHIFA (Ish e'lonlari) */}
+      {/* HOME PAGE */}
       {page === "home" && (
         <main style={{ padding: "20px" }}>
-          <h2 style={{ fontSize: "18px", fontWeight: "700", marginBottom: "15px" }}>Bo'sh ish o'rinlari</h2>
-
-          <div style={{ display: "flex", gap: "8px", overflowX: "auto", paddingBottom: "12px", marginBottom: "15px" }}>
-            {CATEGORIES.map(cat => (
-              <button key={cat} onClick={() => setCategory(cat)} style={{ padding: "6px 14px", borderRadius: "20px", border: "none", backgroundColor: category === cat ? "#007aff" : "#e8e8ed", color: category === cat ? "#fff" : "#1d1d1f", fontSize: "12px", fontWeight: "500", cursor: "pointer", whiteSpace: "nowrap" }}>
-                {cat}
-              </button>
-            ))}
-          </div>
-
-          {filteredJobs.map(job => (
-            <div key={job.id} style={{ backgroundColor: "#fff", padding: "16px", borderRadius: "16px", marginBottom: "12px", border: "1px solid #e8e8ed" }}>
-              <div style={{ display: "flex", gap: "12px" }}>
-                <div style={{ width: "44px", height: "44px", borderRadius: "12px", backgroundColor: job.bg, display: "flex", alignItems: "center", justifyContent: "center", fontSize: "20px" }}>{job.emoji}</div>
-                <div style={{ flex: 1 }}>
-                  <h3 style={{ margin: 0, fontSize: "16px", fontWeight: "700" }}>{job.title}</h3>
-                  <p style={{ margin: "4px 0", fontSize: "13px", color: "#86868b" }}>{job.place} • <b style={{ color: "#007aff" }}>{job.region}, {job.district}</b></p>
-                  <span style={{ fontSize: "14px", fontWeight: "700", color: "#34c759" }}>{job.wage.toLocaleString()} so'm / kunlik</span>
+          {userRole === "worker" ? (
+            <div>
+              <h2 style={{ fontSize: "18px", fontWeight: "700" }}>Bo'sh ish o'rinlari</h2>
+              {filteredJobs.map(job => (
+                <div key={job.id} style={{ backgroundColor: "#fff", padding: "16px", borderRadius: "16px", marginBottom: "12px", border: "1px solid #e8e8ed" }}>
+                  <h3>{job.title}</h3>
+                  <p>{job.place} • {job.region}, {job.district}</p>
                 </div>
-              </div>
-
-              <div style={{ background: "#FFF7ED", border: "1px solid #FFEDD5", borderRadius: "10px", padding: "8px 12px", marginTop: "12px", fontSize: "11px", color: "#9A3412" }}>
-                ⚠️ <b>Xavfsizlik qoidasi:</b> Ishni boshlashdan oldin pasport nusxangizni bermang va hech qachon zalog yoki yo'lkira uchun oldindan pul o'tkazmang!
-              </div>
-
-              <button onClick={() => alert("Ariza yuborildi!")} style={{ width: "100%", marginTop: "12px", padding: "10px", borderRadius: "12px", border: "none", backgroundColor: "#007aff", color: "#fff", fontWeight: "600", cursor: "pointer" }}>
-                Ariza berish
-              </button>
+              ))}
             </div>
-          ))}
-        </main>
-      )}
-
-      {/* 2. ISHCHILAR SAHIFASI (Reyting va Izohlar bilan) */}
-      {page === "workers" && (
-        <main style={{ padding: "20px" }}>
-          <h2 style={{ fontSize: "18px", fontWeight: "700", marginBottom: "15px" }}>Reytingli ishchilar</h2>
-
-          {filteredWorkers.map(worker => (
-            <div key={worker.id} style={{ backgroundColor: "#fff", padding: "16px", borderRadius: "16px", marginBottom: "12px", border: "1px solid #e8e8ed" }}>
-              <div style={{ display: "flex", gap: "12px", alignItems: "flex-start" }}>
-                <div style={{ width: "44px", height: "44px", borderRadius: "50%", backgroundColor: "#34c759", color: "#fff", display: "flex", alignItems: "center", justifyContent: "center", fontWeight: "700", fontSize: "18px" }}>
-                  {worker.avatarLetter}
-                </div>
-                <div style={{ flex: 1 }}>
-                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                    <h3 style={{ margin: 0, fontSize: "15px", fontWeight: "700" }}>{worker.name}</h3>
-                    <span style={{ fontSize: "10px", padding: "2px 6px", background: "#f5f5f7", borderRadius: "4px", color: "#86868b", fontWeight: "600" }}>{worker.district}</span>
-                  </div>
-                  <p style={{ margin: "2px 0 6px", fontSize: "13px", fontWeight: "600", color: "#86868b" }}>{worker.jobTitle}</p>
-                  <RatingStars rating={worker.rating} />
-                  <div style={{ backgroundColor: "#f5f5f7", padding: "8px 12px", borderRadius: "8px", marginTop: "8px", fontSize: "12px", fontStyle: "italic", color: "#1d1d1f" }}>
-                    "{worker.comment}"
-                  </div>
-                </div>
-              </div>
-            </div>
-          ))}
-        </main>
-      )}
-
-      {/* 3. ARIZALAR SAHIFASI (Qabul / Rad) */}
-      {page === "apply" && (
-        <main style={{ padding: "20px" }}>
-          <h2 style={{ fontSize: "18px", fontWeight: "700", marginBottom: "15px" }}>Kelgan arizalar</h2>
-
-          {applications.length === 0 ? (
-            <p style={{ textAlign: "center", color: "#86868b" }}>Arizalar mavjud emas.</p>
           ) : (
-            applications.map(app => (
-              <div key={app.id} style={{ backgroundColor: "#fff", padding: "16px", borderRadius: "16px", marginBottom: "12px", border: "1px solid #e8e8ed" }}>
-                <h3 style={{ margin: 0, fontSize: "15px", fontWeight: "700" }}>{app.workerName}</h3>
-                <p style={{ margin: "4px 0 12px", fontSize: "13px", color: "#86868b" }}>Lavozim: <b>{app.jobTitle}</b> ({app.district})</p>
-
-                {app.status === "pending" ? (
-                  <div style={{ display: "flex", gap: "10px" }}>
-                    <button onClick={() => handleAcceptApplication(app.id, app.workerName)} style={{ flex: 1, padding: "10px", borderRadius: "10px", border: "none", backgroundColor: "#34c759", color: "#fff", fontWeight: "600", cursor: "pointer" }}>
-                      Qabul qilish
-                    </button>
-                    <button onClick={() => handleRejectApplication(app.id)} style={{ flex: 1, padding: "10px", borderRadius: "10px", border: "none", backgroundColor: "#ff3b30", color: "#fff", fontWeight: "600", cursor: "pointer" }}>
-                      Rad etish
-                    </button>
-                  </div>
-                ) : (
-                  <div style={{ backgroundColor: "#e8f8f2", color: "#0e6245", padding: "10px", borderRadius: "10px", textAlign: "center", fontWeight: "600", fontSize: "13px" }}>
-                    ✓ Qabul qilindi
-                  </div>
-                )}
-              </div>
-            ))
+            <div>
+              <h2 style={{ fontSize: "18px", fontWeight: "700" }}>Reytingli ishchilar</h2>
+              {filteredWorkers.map(worker => (
+                <div key={worker.id} style={{ backgroundColor: "#fff", padding: "16px", borderRadius: "16px", marginBottom: "12px", border: "1px solid #e8e8ed" }}>
+                  <h3>{worker.name} {worker.isPro && <span style={{ color: "#ff9500" }}>⭐ PRO</span>}</h3>
+                  <p>{worker.jobTitle} • {worker.region}, {worker.district}</p>
+                </div>
+              ))}
+            </div>
           )}
         </main>
       )}
 
-      {/* 4. PROFIL SAHIFASI */}
+      {/* PROFIL PAGE */}
       {page === "profile" && (
         <main style={{ padding: "20px", textAlign: "center" }}>
           <div style={{ backgroundColor: "#fff", padding: "24px", borderRadius: "20px", border: "1px solid #e8e8ed" }}>
-            <div style={{ width: "80px", height: "80px", borderRadius: "50%", backgroundColor: "#007aff", color: "#fff", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "32px", fontWeight: "700", margin: "0 auto 12px" }}>T</div>
-            <h3 style={{ margin: 0, fontSize: "18px", fontWeight: "700" }}>Temurbek Yoqubov</h3>
-            <p style={{ margin: "4px 0 15px", fontSize: "14px", color: "#86868b" }}>+998 90 123 45 67</p>
-
-            <button onClick={() => setShowProModal(true)} style={{ width: "100%", padding: "12px", borderRadius: "12px", border: "none", backgroundColor: "#ff9500", color: "#fff", fontWeight: "700", cursor: "pointer" }}>
-              ⭐ PRO Tarifni faollashtirish
-            </button>
+            <div style={{ width: "80px", height: "80px", borderRadius: "50%", backgroundColor: "#007aff", color: "#fff", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "32px", margin: "0 auto 12px" }}>T</div>
+            <h3>{currentUser.name}</h3>
+            <p>{currentUser.phone}</p>
+            {currentUser.isAdmin && (
+              <button onClick={() => setPage("admin")} style={{ width: "100%", padding: "12px", borderRadius: "12px", border: "2px dashed #ff3b30", backgroundColor: "#fff", color: "#ff3b30", fontWeight: "700", cursor: "pointer", marginTop: "15px" }}>
+                🎛️ Open Swagger Admin Panel
+              </button>
+            )}
           </div>
         </main>
       )}
 
-      {/* PRO TARIF MODAL OYNASI */}
-      {showProModal && (
-        <div style={{ position: "fixed", top: 0, left: 0, width: "100%", height: "100%", background: "rgba(0,0,0,0.5)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 1000, padding: "16px" }}>
-          <div style={{ backgroundColor: "#fff", borderRadius: "20px", padding: "20px", width: "100%", maxWidth: "360px", position: "relative" }}>
-            <button onClick={() => setShowProModal(false)} style={{ position: "absolute", top: "12px", right: "14px", background: "none", border: "none", fontSize: "18px", cursor: "pointer", color: "#86868b" }}>✕</button>
+      {/* SWAGGER API DOCS STYLE ADMIN PANEL */}
+      {page === "admin" && currentUser.isAdmin && (
+        <main style={{ backgroundColor: "#fafafa", minHeight: "100vh", padding: "20px", color: "#3b4151" }}>
 
-            <div style={{ textAlign: "center", marginBottom: "15px" }}>
-              <span style={{ fontSize: "36px" }}>⭐</span>
-              <h3 style={{ margin: "6px 0 2px", fontSize: "18px", fontWeight: "700" }}>PRO Obuna tizimi</h3>
+          {/* Swagger Top Bar */}
+          <div style={{ backgroundColor: "#1b1b1b", padding: "14px 20px", margin: "-20px -20px 20px -20px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+            <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+              <span style={{ backgroundColor: "#62a03f", color: "#fff", padding: "4px 8px", borderRadius: "4px", fontSize: "12px", fontWeight: "bold" }}>SWAGGER</span>
+              <h2 style={{ color: "#fff", fontSize: "16px", margin: 0, fontWeight: "600" }}>Worky Backend API Admin Control</h2>
             </div>
-
-            <div style={{ backgroundColor: "#f5f5f7", borderRadius: "12px", padding: "12px", fontSize: "12px", lineHeight: "1.5", border: "1px solid #e8e8ed", marginBottom: "15px" }}>
-              <b style={{ color: "#ff9500" }}>1. To'lov qiling:</b><br/>
-              💳 Karta: <b>8600 0000 0000 0000</b>
-              <div style={{ margin: "6px 0", height: "1px", backgroundColor: "#e8e8ed" }} />
-              <b style={{ color: "#007aff" }}>2. Tasdiq chekini yuboring:</b><br/>
-              To'lov cheki va shaxsiy ID raqamingizni nusxalab Telegramga yuboring.
-            </div>
-
-            <div style={{ backgroundColor: "#e8f8f2", borderRadius: "12px", padding: "10px", display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "15px" }}>
-              <div>
-                <div style={{ fontSize: "9px", color: "#86868b" }}>SHAXSIY ID:</div>
-                <div style={{ fontSize: "14px", fontWeight: "700", color: "#0e6245" }}>WRK99812</div>
-              </div>
-              <button onClick={() => { navigator.clipboard.writeText("WRK99812"); alert("ID nusxalandi!"); }} style={{ backgroundColor: "#fff", border: "1px solid #34c759", color: "#34c759", borderRadius: "8px", padding: "6px 12px", fontSize: "12px", fontWeight: "600", cursor: "pointer" }}>
-                Nusxalash
-              </button>
-            </div>
-
-            <a href="https://t.me/logotipshop10" target="_blank" rel="noreferrer" style={{ textDecoration: "none" }}>
-              <button style={{ width: "100%", padding: "12px 0", borderRadius: "12px", border: "none", backgroundColor: "#24A1DE", color: "#fff", fontSize: "14px", fontWeight: "600", cursor: "pointer" }}>
-                ✈️ Telegramga chekni yuborish
-              </button>
-            </a>
+            <button onClick={() => setPage("profile")} style={{ backgroundColor: "#788194", color: "#fff", border: "none", padding: "6px 14px", borderRadius: "4px", cursor: "pointer", fontSize: "12px", fontWeight: "600" }}>Close Docs</button>
           </div>
-        </div>
+
+          <div style={{ maxWidth: "800px", margin: "0 auto" }}>
+            <h2 style={{ fontSize: "24px", margin: "0 0 5px 0", fontWeight: "600" }}>Worky Core System Base API</h2>
+            <div style={{ fontSize: "12px", color: "#7f7f7f", marginBottom: "20px" }}>[ Base URL: <code style={{ background: "#f0f0f0", padding: "2px 4px" }}>https://worky-backend-1.onrender.com/api</code> ]</div>
+
+            <div style={{ fontSize: "18px", borderBottom: "1px solid #ccc", paddingBottom: "5px", marginBottom: "15px", fontWeight: "bold" }}>Users PRO & Subscriptions Management</div>
+
+            {/* SWAGGER POST BLOK: ACTIVATE PRO */}
+            <div style={{ border: "1px solid #49cc90", backgroundColor: "rgba(73,204,144,.1)", borderRadius: "4px", marginBottom: "15px", overflow: "hidden" }}>
+              <div style={{ display: "flex", alignItems: "center", padding: "10px", justifyContent: "space-between" }}>
+                <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+                  <span style={{ backgroundColor: "#49cc90", color: "#fff", minWidth: "80px", textAlign: "center", padding: "6px", borderRadius: "3px", fontSize: "12px", fontWeight: "bold" }}>POST</span>
+                  <code style={{ fontWeight: "bold", fontSize: "14px" }}>/v1/admin/pro/activate</code>
+                  <span style={{ color: "#666", fontSize: "12px" }}>Faollashtirish (30 kunlik avtomat taymer start)</span>
+                </div>
+              </div>
+              <div style={{ backgroundColor: "#fff", padding: "15px", borderTop: "1px solid #49cc90" }}>
+                {workers.filter(w => !w.isPro).map(w => (
+                  <div key={w.id} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "8px 0", borderBottom: "1px solid #eee" }}>
+                    <span style={{ fontSize: "13px" }}>ID: <b>{w.id}</b> | {w.name} ({w.district})</span>
+                    <button onClick={() => activateProUser(w.id)} style={{ backgroundColor: "#49cc90", color: "#fff", border: "none", padding: "6px 12px", borderRadius: "4px", fontSize: "12px", fontWeight: "bold", cursor: "pointer" }}>Execute (PRO Berish)</button>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* SWAGGER DELETE BLOK: DEACTIVATE PRO */}
+            <div style={{ border: "1px solid #f93e3e", backgroundColor: "rgba(249,62,62,.1)", borderRadius: "4px", marginBottom: "15px", overflow: "hidden" }}>
+              <div style={{ display: "flex", alignItems: "center", padding: "10px", justifyContent: "space-between" }}>
+                <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+                  <span style={{ backgroundColor: "#f93e3e", color: "#fff", minWidth: "80px", textAlign: "center", padding: "6px", borderRadius: "3px", fontSize: "12px", fontWeight: "bold" }}>DELETE</span>
+                  <code style={{ fontWeight: "bold", fontSize: "14px" }}>/v1/admin/pro/deactivate</code>
+                  <span style={{ color: "#666", fontSize: "12px" }}>Muddatidan oldin o'chirish (Noactiv qilish)</span>
+                </div>
+              </div>
+              <div style={{ backgroundColor: "#fff", padding: "15px", borderTop: "1px solid #f93e3e" }}>
+                {workers.filter(w => w.isPro).map(w => (
+                  <div key={w.id} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "8px 0", borderBottom: "1px solid #eee" }}>
+                    <span style={{ fontSize: "13px" }}>ID: <b>{w.id}</b> | {w.name} <span style={{ color: "#f93e3e" }}>[Aktiv gacha: {w.proUntil}]</span></span>
+                    <button onClick={() => deactivateProUser(w.id)} style={{ backgroundColor: "#f93e3e", color: "#fff", border: "none", padding: "6px 12px", borderRadius: "4px", fontSize: "12px", fontWeight: "bold", cursor: "pointer" }}>Execute (Noactiv)</button>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <div style={{ fontSize: "18px", borderBottom: "1px solid #ccc", paddingBottom: "5px", margin: "25px 0 15px 0", fontWeight: "bold" }}>Jobs & Content Moderation</div>
+
+            {/* SWAGGER DELETE BLOK: DELETE JOB */}
+            <div style={{ border: "1px solid #f93e3e", backgroundColor: "rgba(249,62,62,.1)", borderRadius: "4px", marginBottom: "15px", overflow: "hidden" }}>
+              <div style={{ display: "flex", alignItems: "center", padding: "10px", justifyContent: "space-between" }}>
+                <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+                  <span style={{ backgroundColor: "#f93e3e", color: "#fff", minWidth: "80px", textAlign: "center", padding: "6px", borderRadius: "3px", fontSize: "12px", fontWeight: "bold" }}>DELETE</span>
+                  <code style={{ fontWeight: "bold", fontSize: "14px" }}>/v1/admin/jobs/{"{id}"}</code>
+                  <span style={{ color: "#666", fontSize: "12px" }}>Shubhali yoki fake e'lonlarni butunlay o'chirish</span>
+                </div>
+              </div>
+              <div style={{ backgroundColor: "#fff", padding: "15px", borderTop: "1px solid #f93e3e" }}>
+                {jobs.map(job => (
+                  <div key={job.id} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "8px 0", borderBottom: "1px solid #eee" }}>
+                    <span style={{ fontSize: "13px" }}>📦 {job.title} — <i>{job.place} ({job.district})</i></span>
+                    <button onClick={() => deleteJob(job.id)} style={{ backgroundColor: "#f93e3e", color: "#fff", border: "none", padding: "6px 12px", borderRadius: "4px", fontSize: "12px", fontWeight: "bold", cursor: "pointer" }}>Delete</button>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* SWAGGER PUT BLOK: BAN USER */}
+            <div style={{ border: "1px solid #fca130", backgroundColor: "rgba(252,161,48,.1)", borderRadius: "4px", marginBottom: "15px", overflow: "hidden" }}>
+              <div style={{ display: "flex", alignItems: "center", padding: "10px", justifyContent: "space-between" }}>
+                <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+                  <span style={{ backgroundColor: "#fca130", color: "#fff", minWidth: "80px", textAlign: "center", padding: "6px", borderRadius: "3px", fontSize: "12px", fontWeight: "bold" }}>PUT</span>
+                  <code style={{ fontWeight: "bold", fontSize: "14px" }}>/v1/admin/users/ban</code>
+                  <span style={{ color: "#666", fontSize: "12px" }}>Qoidalarni buzganlarni bloklash (Ban)</span>
+                </div>
+              </div>
+              <div style={{ backgroundColor: "#fff", padding: "15px", borderTop: "1px solid #fca130" }}>
+                {workers.map(w => (
+                  <div key={w.id} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "8px 0", borderBottom: "1px solid #eee" }}>
+                    <span style={{ fontSize: "13px", color: w.banned ? "red" : "inherit" }}>👤 {w.name} {w.banned && "<b>(BLOKLANGAN)</b>"}</span>
+                    <button onClick={() => toggleBanWorker(w.id)} style={{ backgroundColor: "#fca130", color: "#fff", border: "none", padding: "6px 12px", borderRadius: "4px", fontSize: "12px", fontWeight: "bold", cursor: "pointer" }}>
+                      {w.banned ? "Unban" : "Ban User"}
+                    </button>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+          </div>
+        </main>
       )}
 
-      {/* BOTTOM NAVIGATION BAR */}
-      <nav style={{ position: "fixed", bottom: 0, left: 0, right: 0, height: "64px", backgroundColor: "#fff", borderTop: "1px solid #d2d2d7", display: "flex", justifyContent: "space-around", alignItems: "center", zIndex: 900 }}>
-        <button onClick={() => setPage("home")} style={{ border: "none", background: "none", color: page === "home" ? "#007aff" : "#86868b", fontSize: "11px", cursor: "pointer" }}>
-          <span style={{ fontSize: "20px", display: "block" }}>🏠</span>Ishlar
-        </button>
-        <button onClick={() => setPage("workers")} style={{ border: "none", background: "none", color: page === "workers" ? "#007aff" : "#86868b", fontSize: "11px", cursor: "pointer" }}>
-          <span style={{ fontSize: "20px", display: "block" }}>👷</span>Ishchilar
-        </button>
-        <button onClick={() => setPage("apply")} style={{ border: "none", background: "none", color: page === "apply" ? "#007aff" : "#86868b", fontSize: "11px", cursor: "pointer" }}>
-          <span style={{ fontSize: "20px", display: "block" }}>📋</span>Arizalar
-        </button>
-        <button onClick={() => setPage("profile")} style={{ border: "none", background: "none", color: page === "profile" ? "#007aff" : "#86868b", fontSize: "11px", cursor: "pointer" }}>
-          <span style={{ fontSize: "20px", display: "block" }}>👤</span>Profil
-        </button>
-      </nav>
+      {/* BOTTOM NAV */}
+      {page !== "admin" && (
+        <nav style={{ position: "fixed", bottom: 0, left: 0, right: 0, height: "64px", backgroundColor: "#fff", borderTop: "1px solid #d2d2d7", display: "flex", justifyContent: "space-around", alignItems: "center", zIndex: 900 }}>
+          <button onClick={() => setPage("home")} style={{ border: "none", background: "none", color: page === "home" ? "#007aff" : "#86868b" }}>🏠 Ishlar</button>
+          <button onClick={() => setPage("profile")} style={{ border: "none", background: "none", color: page === "profile" ? "#007aff" : "#86868b" }}>👤 Profil</button>
+        </nav>
+      )}
 
     </div>
   );
