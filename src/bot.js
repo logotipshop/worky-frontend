@@ -6,24 +6,21 @@ import express from 'express';
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// Firebase Konfiguratsiyasi
 const firebaseConfig = {
-  apiKey: "AIzaSyAjssn3vbS0l_GJoJeV-HrGg1NTUKLou6U",
-  authDomain: "worky-2d426.firebaseapp.com",
-  databaseURL: "https://worky-2d426-default-rtdb.europe-west1.firebasedatabase.app",
-  projectId: "worky-2d426",
-  storageBucket: "worky-2d426.firebasestorage.app",
-  messagingSenderId: "523843560168",
-  appId: "1:523843560168:web:d0235e2c3e5abf46c91f5d",
+  apiKey: process.env.FIREBASE_API_KEY,
+  authDomain: process.env.FIREBASE_AUTH_DOMAIN,
+  databaseURL: process.env.FIREBASE_DATABASE_URL,
+  projectId: process.env.FIREBASE_PROJECT_ID,
+  storageBucket: process.env.FIREBASE_STORAGE_BUCKET,
+  messagingSenderId: process.env.FIREBASE_MESSAGING_SENDER_ID,
+  appId: process.env.FIREBASE_APP_ID,
 };
 
 const firebaseApp = initializeApp(firebaseConfig);
 const db = getDatabase(firebaseApp);
 
-// Toza va xavfsiz token
-const bot = new Telegraf("8774789236:AAF7r3DgpGGgkxETsQ2KDzZtBH0Hx1Wc1MY");
+const bot = new Telegraf(process.env.BOT_TOKEN);
 
-// === O'ZBEKISTONNING BARCHA VILOYAT VA TUMANLARI MA'LUMOTLAR BAZASI ===
 const regionsData = {
   tashkent_sh: {
     name: "Toshkent sh.",
@@ -124,13 +121,12 @@ const registerWizard = new Scenes.WizardScene(
     }
     ctx.wizard.state.phone = ctx.message.contact ? ctx.message.contact.phone_number : ctx.message.text;
 
-    // === WORKY PLATFORMASINING PROFESSIONAL METRO QOIDALARI ===
     const rulesText =
-      "⚠️ **Worky Platformasi Foydalanish Qoidalari:**\n\n" +
-      "1️⃣ **Halollik me'mori:** Ish beruvchi va ishchi kelishilgan vaqtda va narxda majburiyatlarini bajarishi shart.\n" +
-      "2️⃣ **Fake taqiqi:** Platformada yolg'on e'lonlar, feyk hisoblar yoki firibgarlik maqsadidagi arizalar qat'iyan taqiqlanadi.\n" +
-      "3️⃣ **Odob-axloq:** Muloqot jarayonida (Telegram yoki Tel) haqoratli so'zlar ishlatish akkauntning umrbod bloklanishiga olib keladi.\n" +
-      "4️⃣ **Xavfsizlik:** To'lov kelishuvlarini faqat tasdiqlangan shaxslar bilan amalga oshiring.\n\n" +
+      "⚠️ Worky Platformasi Foydalanish Qoidalari:\n\n" +
+      "1️⃣ Halollik: Ish beruvchi va ishchi kelishilgan vaqtda va narxda majburiyatlarini bajarishi shart.\n" +
+      "2️⃣ Fake taqiqi: Platformada yolg'on e'lonlar, feyk hisoblar yoki firibgarlik qat'iyan taqiqlanadi.\n" +
+      "3️⃣ Odob-axloq: Haqoratli so'zlar ishlatish akkauntning umrbod bloklanishiga olib keladi.\n" +
+      "4️⃣ Xavfsizlik: To'lov kelishuvlarini faqat tasdiqlangan shaxslar bilan amalga oshiring.\n\n" +
       "Davom etish uchun shartlarni qabul qiling:";
 
     await ctx.reply(rulesText, Markup.inlineKeyboard([
@@ -148,7 +144,7 @@ const registerWizard = new Scenes.WizardScene(
     await ctx.answerCbQuery();
 
     if (status === 'decline') {
-      await ctx.reply("Afsus, shartlarni rad etdingiz. Platformadan foydalanish uchun qoidalarni qabul qilishingiz kerak. Qayta boshlash: /start");
+      await ctx.reply("Afsus, shartlarni rad etdingiz. Qayta boshlash: /start");
       return ctx.scene.leave();
     }
 
@@ -176,7 +172,6 @@ const registerWizard = new Scenes.WizardScene(
     ctx.wizard.state.region = selectedRegion.name;
     await ctx.answerCbQuery();
 
-    // Tumanlarni inline inline-keyboard ko'rinishida 2 tadan qilib chiroyli chiqarish
     const districtButtons = [];
     for (let i = 0; i < selectedRegion.districts.length; i += 2) {
       const row = [Markup.button.callback(selectedRegion.districts[i], `dist:${selectedRegion.districts[i]}`)];
@@ -197,7 +192,7 @@ const registerWizard = new Scenes.WizardScene(
     const districtName = ctx.callbackQuery.data.split(':')[1];
     await ctx.answerCbQuery();
 
-    const telegramId = ctx.from.id;
+    const telegramId = String(ctx.from.id);
     const userData = {
       telegramId: telegramId,
       name: ctx.wizard.state.name,
@@ -230,26 +225,21 @@ bot.use(session());
 bot.use(stage.middleware());
 
 bot.start(async (ctx) => {
-  const telegramId = ctx.from.id;
+  const telegramId = String(ctx.from.id);
   try {
     const snapshot = await get(ref(db, `users/${telegramId}`));
     if (snapshot.exists()) {
       const userData = snapshot.val();
-      const proStatus = userData.isPro ? `✅ Faol (Muddati: ${userData.proExpireAt})` : "❌ Faol emas (Oddiy)";
+      const proStatus = userData.isPro ? "✅ Faol" : "❌ Faol emas (Oddiy)";
 
-      const text =
-        `👤 **Worky Profilingiz:**\n\n` +
-        `🆔 Worky ID: \`${telegramId}\`\n` +
+      await ctx.reply(
+        `👤 Worky Profilingiz:\n\n` +
+        `🆔 Worky ID: ${telegramId}\n` +
         `📝 Ism: ${userData.name}\n` +
         `💼 Rol: ${userData.role === 'worker' ? 'Ishchi' : 'Ish beruvchi'}\n` +
+        `📍 Hudud: ${userData.region}, ${userData.district}\n` +
         `👑 PRO Holati: ${proStatus}\n\n` +
-        `🌟 **PRO sotib olish:**\n` +
-        `💳 Karta: \`8600123456789012\` (Temur)\n` +
-        `💰 Narxi: 50,000 so'm\n\n` +
-        `To'lov qilib, chekni va ID-ni @logotipshop10 ga tashlang!`;
-
-      await ctx.replyWithMarkdownV2(
-        text.replace(/\./g, '\\.').replace(/-/g, '\\-').replace(/\!/g, '\\!'),
+        `PRO sotib olish uchun saytga kiring va PRO tugmasini bosing!`,
         Markup.inlineKeyboard([[Markup.button.url("🌐 Worky Saytiga Kirish", "https://worky-0g13.onrender.com/")]])
       );
     } else {
@@ -266,7 +256,7 @@ app.listen(PORT, () => console.log(`Server port: ${PORT}`));
 bot.launch().then(() => console.log("Worky Bot muvaffaqiyatli yurdi!"));
 
 bot.catch((err, ctx) => {
-  console.error(`🚨 Global Xato:`, err);
+  console.error(`Global Xato:`, err);
 });
 
 process.once('SIGINT', () => bot.stop('SIGINT'));
