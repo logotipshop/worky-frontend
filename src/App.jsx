@@ -30,7 +30,6 @@ export default function App() {
   const [logoText, setLogoText] = useState('Worky');
 
   useEffect(() => {
-    // Jonli ravishda Admin tomondan o'rnatilgan dizayn va bayram sozlamalarini yuklash
     onValue(ref(db, 'settings/theme'), (snapshot) => {
       const data = snapshot.val();
       if (data) {
@@ -50,13 +49,12 @@ export default function App() {
     });
   }, []);
 
-  // PRO Obunani vaqt bo'yicha tekshirish (Real-time xavfsizlik)
   useEffect(() => {
     if (user && user.isPro && user.proExpireAt) {
       if (Date.now() > user.proExpireAt) {
-        // Muddat tugagan bo'lsa avtomatik oddiy holatga qaytarish
-        set(ref(db, `users/${user.telegramId}/isPro`), false);
-        set(ref(db, `users/${user.telegramId}/proExpireAt`), "");
+        const myId = user.telegramId || user.id;
+        set(ref(db, `users/${myId}/isPro`), false);
+        set(ref(db, `users/${myId}/proExpireAt`), "");
         setUser(prev => ({ ...prev, isPro: false, proExpireAt: "" }));
         alert("Sizning PRO obunangiz muddati tugadi. Iltimos, yangilang!");
       }
@@ -67,7 +65,7 @@ export default function App() {
     e.preventDefault();
     if (!telegramId || !password) return alert('Hamma maydonlarni kiriting!');
 
-    if (telegramId === 'ADMIN777' && password === 'ADMIN777') {
+    if (telegramId.trim() === 'ADMIN777' && password === 'ADMIN777') {
       setIsAdmin(true);
       return;
     }
@@ -78,9 +76,7 @@ export default function App() {
       if (snapshot.exists()) {
         const userData = snapshot.val();
 
-        // PAROL XAVFSIZLIGI LOGIKASI
         if (!userData.password || userData.password === "") {
-          // Birinchi marta kirganda parolni o'rnatish
           await set(ref(db, `users/${telegramId}/password`), password);
           userData.password = password;
           setUser(userData);
@@ -100,7 +96,6 @@ export default function App() {
     }
   };
 
-  // Bayramona bezaklar va emojilar mantiqi
   const getHolidayDecoration = () => {
     if (currentHoliday === 'yangi_yil') return { emoji: "❄️", banner: "🎉 Yangi Yilingiz Muborak! 🎄" };
     if (currentHoliday === 'navruz') return { emoji: "🌱", banner: "🌸 Navro'z Ayomi Muborak! 🌾" };
@@ -123,10 +118,9 @@ export default function App() {
         </div>
         {dec.banner && <div style={styles.holidayBanner}>{dec.banner}</div>}
         <form onSubmit={handleLogin} style={styles.formContainer}>
-          <input type="number" placeholder="Telegram ID raqamingiz..." value={telegramId} onChange={(e) => setTelegramId(e.target.value)} style={styles.input} />
+          <input type="text" placeholder="Telegram ID raqamingiz..." value={telegramId} onChange={(e) => setTelegramId(e.target.value)} style={styles.input} />
           <input type="password" placeholder="Maxfiy parolingiz..." value={password} onChange={(e) => setPassword(e.target.value)} style={styles.input} />
 
-          {/* SIZ XOHLAGAN TUShUNARLI OGOHLANTIRISH */}
           <div style={styles.loginNote}>
             🚨 <b>MUHIM ESLATMA:</b> Saytga birinchi marta kirayotganingizda oʻzingiz unutilmaydigan mustahkam parol oʻylab topib kiriting! Bu parol sizning profilingizni himoya qilish uchun saqlab qolinadi. Worky ID raqamingiz boshqa foydalanuvchilarga koʻrinib turadi, shuning uchun parolingizni mutlaqo hech kimga aytmang va unutmang! Parol — profilingiz kalitidir.
           </div>
@@ -144,38 +138,37 @@ function Dashboard({ user, setUser, onLogout, dec, logoText }) {
   const [activeTab, setActiveTab] = useState('main');
   const [allWorkers, setAllWorkers] = useState([]);
   const [allJobs, setAllJobs] = useState([]);
-  const [myApplications, setMyApplications] = useState([]); // Kelgan takliflar
-  const [sentApplications, setSentApplications] = useState([]); // Yuborilgan takliflar
+  const [myApplications, setMyApplications] = useState([]);
+  const [sentApplications, setSentApplications] = useState([]);
   const [showProModal, setShowProModal] = useState(false);
 
-  // Profil tahrirlash state'lari
   const [profileName, setProfileName] = useState(user.name || '');
   const [profilePhone, setProfilePhone] = useState(user.phone || '');
   const [profileLink, setProfileLink] = useState(user.telegramLink || '');
   const [profileImg, setProfileImg] = useState(user.avatar || '');
+  const [profileRegion, setProfileRegion] = useState(user.region || 'Toshkent');
+  const [profileDistrict, setProfileDistrict] = useState(user.district || 'Yunusobod');
 
-  // E'lon berish state'lari (Ish beruvchi uchun)
   const [jobTitle, setJobTitle] = useState('');
   const [jobCategory, setJobCategory] = useState(CATEGORIES[0]);
-  const [jobFormat, setJobFormat] = useState('offline'); // offline yoki online
+  const [jobFormat, setJobFormat] = useState('offline');
   const [jobSalary, setJobSalary] = useState('');
   const [jobHours, setJobHours] = useState('');
   const [jobDesc, setJobDesc] = useState('');
 
-  // Filtrlash va Reyting
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('All');
-  const [selectedFormat, setSelectedFormat] = useState('All');
+  const [selectedFormat, setSelectedFormat] = useState('offline');
   const [reviewText, setReviewText] = useState('');
   const [reviewRating, setReviewRating] = useState(5);
   const [activeReviewWorkerId, setActiveReviewWorkerId] = useState(null);
 
-  // Shikoyat state'lari
   const [targetId, setTargetId] = useState('');
   const [reportReason, setReportReason] = useState('');
 
+  const currentUserId = user.telegramId || user.id;
+
   useEffect(() => {
-    // Bazadan foydalanuvchilarni olish
     onValue(ref(db, 'users'), (snapshot) => {
       const data = snapshot.val();
       if (data) {
@@ -184,28 +177,26 @@ function Dashboard({ user, setUser, onLogout, dec, logoText }) {
       }
     });
 
-    // Bazadan barcha ish e'lonlarini olish
     onValue(ref(db, 'jobs'), (snapshot) => {
       const data = snapshot.val();
       if (data) setAllJobs(Object.keys(data).map(key => ({ id: key, ...data[key] })));
       else setAllJobs([]);
     });
 
-    // Arizalarni kuzatish
+    // === ARIZALARNI JONLI KUZATISH VA FILTRLASH ===
     onValue(ref(db, 'job_applications'), (snapshot) => {
       const data = snapshot.val();
       if (data) {
         const list = Object.keys(data).map(key => ({ id: key, ...data[key] }));
-        setMyApplications(list.filter(app => app.workerId === user.telegramId));
-        setSentApplications(list.filter(app => app.employerId === user.telegramId));
+        setMyApplications(list.filter(app => app.workerId === currentUserId));
+        setSentApplications(list.filter(app => app.employerId === currentUserId));
       } else {
         setMyApplications([]);
         setSentApplications([]);
       }
     });
-  }, [user.telegramId]);
+  }, [currentUserId]);
 
-  // Profil rasmini rasm yuklash orqali Base64 formatga o'tkazish
   const handleImageChange = (e) => {
     const file = e.target.files[0];
     if (file) {
@@ -215,43 +206,54 @@ function Dashboard({ user, setUser, onLogout, dec, logoText }) {
     }
   };
 
-  // Profilni saqlash
   const handleSaveProfile = async (e) => {
     e.preventDefault();
     if (!profilePhone || !profileLink) return alert('Telefon va Telegram havola majburiy!');
-    const updated = { ...user, name: profileName, phone: profilePhone, telegramLink: profileLink, avatar: profileImg };
-    await set(ref(db, `users/${user.telegramId}`), updated);
+    const updated = {
+      ...user,
+      name: profileName,
+      phone: profilePhone,
+      telegramLink: profileLink,
+      avatar: profileImg,
+      region: profileRegion,
+      district: profileDistrict
+    };
+    await set(ref(db, `users/${currentUserId}`), updated);
     setUser(updated);
-    alert('Profil yangilandi!');
+    alert('Profil muvaffaqiyatli yangilandi!');
   };
 
-  // Ish Beruvchi yangi e'lon qo'shishi
   const handleAddJob = async (e) => {
     e.preventDefault();
     if (!jobTitle || !jobSalary || !jobHours || !jobDesc) return alert('Barcha maydonlarni to\'ldiring!');
 
-    await set(push(ref(db, 'jobs')), {
-      employerId: user.telegramId,
-      employerName: user.name,
-      employerPhone: user.phone,
-      employerLink: user.telegramLink || '',
-      title: jobTitle,
-      category: jobCategory,
-      format: jobFormat,
-      salary: jobSalary,
-      hours: jobHours,
-      desc: jobDesc,
-      region: user.region || 'Toshkent',
-      district: user.district || 'Yunusobod',
-      createdAt: new Date().toISOString()
-    });
+    try {
+      const newJob = {
+        employerId: currentUserId,
+        employerName: user.name || "Noma'lum",
+        employerPhone: user.phone || "Kiritilmagan",
+        employerLink: user.telegramLink || '',
+        title: jobTitle,
+        category: jobCategory,
+        format: jobFormat,
+        salary: jobSalary,
+        hours: jobHours,
+        desc: jobDesc,
+        region: user.region || 'Toshkent',
+        district: user.district || 'Yunusobod',
+        createdAt: new Date().toISOString()
+      };
 
-    alert('Ish e\'loni muvaffaqiyatli joylandi!');
-    setJobTitle(''); setJobSalary(''); setJobHours(''); setJobDesc('');
-    setActiveTab('my_jobs');
+      await push(ref(db, 'jobs'), newJob);
+
+      alert('Ish e\'loni muvaffaqiyatli joylandi!');
+      setJobTitle(''); setJobSalary(''); setJobHours(''); setJobDesc('');
+      setActiveTab('my_jobs');
+    } catch(err) {
+      alert("Xatolik yuz berdi, qayta urining.");
+    }
   };
 
-  // Ish beruvchi e'lonni o'chirishi
   const handleDeleteJob = async (jobId) => {
     if (window.confirm("Bu e'lonni o'chirmoqchimisiz?")) {
       await remove(ref(db, `jobs/${jobId}`));
@@ -259,35 +261,53 @@ function Dashboard({ user, setUser, onLogout, dec, logoText }) {
     }
   };
 
-  // Ish beruvchi ishchiga taklif yuborishi
+  // === ARIZA YUBORISH FUNKSIYASI ===
   const handleSendApplication = async (worker) => {
-    const exist = sentApplications.find(app => app.workerId === worker.telegramId);
+    if (user.role !== 'employer') return alert('Faqat ish beruvchilar ariza yubora oladi!');
+
+    const workerId = worker.telegramId || worker.id;
+    if (!currentUserId || !workerId) return alert('Xatolik: ID raqamlar topilmadi!');
+
+    const exist = sentApplications.find(app => app.workerId === workerId && app.employerId === currentUserId);
     if (exist) return alert('Bu ishchiga allaqachon ariza yuborilgan!');
 
-    await set(push(ref(db, 'job_applications')), {
-      employerId: user.telegramId,
-      employerName: user.name,
-      employerPhone: user.phone,
-      employerLink: user.telegramLink || '',
-      workerId: worker.telegramId,
-      workerName: worker.name,
-      workerPhone: worker.phone || '',
-      workerLink: worker.telegramLink || '',
-      status: 'pending',
-      createdAt: new Date().toISOString()
-    });
-    alert('Taklif yuborildi!');
+    try {
+      await push(ref(db, 'job_applications'), {
+        employerId: currentUserId,
+        employerName: user.name || "Noma'lum",
+        employerPhone: user.phone || '',
+        employerLink: user.telegramLink || '',
+        workerId: workerId,
+        workerName: worker.name || "Noma'lum",
+        workerPhone: worker.phone || '',
+        workerLink: worker.telegramLink || '',
+        status: 'pending',
+        createdAt: new Date().toISOString()
+      });
+      alert('Taklif muvaffaqiyatli yuborildi!');
+    } catch(error) {
+      alert('Xatolik: ' + error.message);
+    }
   };
 
   const handleAcceptApp = async (appId) => {
-    await set(ref(db, `job_applications/${appId}/status`), 'accepted');
+    try {
+      await set(ref(db, `job_applications/${appId}/status`), 'accepted');
+      alert('Taklifni qabul qildingiz!');
+    } catch (error) {
+      alert('Xatolik: ' + error.message);
+    }
   };
 
   const handleDeclineApp = async (appId) => {
-    await set(ref(db, `job_applications/${appId}/status`), 'declined');
+    try {
+      await set(ref(db, `job_applications/${appId}/status`), 'declined');
+      alert('Taklif rad etildi.');
+    } catch (error) {
+      alert('Xatolik: ' + error.message);
+    }
   };
 
-  // Ishchiga sharh va reyting qoldirish mantiqi
   const handleSubmitReview = async (e) => {
     e.preventDefault();
     if (!reviewText) return alert('Sharh matnini yozing!');
@@ -297,13 +317,12 @@ function Dashboard({ user, setUser, onLogout, dec, logoText }) {
     if (snapshot.exists()) {
       const wData = snapshot.val();
       const currentReviews = wData.reviews ? Object.values(wData.reviews) : [];
-      const newReview = { rating: Number(reviewRating), text: reviewText, from: user.name };
+      const newReview = { rating: Number(reviewRating), text: reviewText, from: user.name || "Anonim" };
 
-      // Yangi reyting o'rtachasini hisoblash
       const allRatings = [...currentReviews.map(r => r.rating), Number(reviewRating)];
       const avgRating = allRatings.reduce((a, b) => a + b, 0) / allRatings.length;
 
-      await set(push(ref(db, `users/${activeReviewWorkerId}/reviews`)), newReview);
+      await push(ref(db, `users/${activeReviewWorkerId}/reviews`), newReview);
       await set(ref(db, `users/${activeReviewWorkerId}/rating`), avgRating.toFixed(1));
 
       alert('Baho va sharhingiz saqlandi!');
@@ -312,12 +331,10 @@ function Dashboard({ user, setUser, onLogout, dec, logoText }) {
     }
   };
 
-  // Mukammal xavfsiz shikoyat yuborish tizimi (Ikkala tomonning link va raqamlari bilan)
   const handleSendReport = async (e) => {
     e.preventDefault();
     if (!targetId || !reportReason) return alert('Hamma maydonlarni to\'ldiring!');
 
-    // Qoidabuzar ma'lumotlarini qidirish
     const targetSnapshot = await get(ref(db, `users/${targetId}`));
     let targetName = "Noma'lum";
     let targetPhone = "Kiritilmagan";
@@ -325,15 +342,15 @@ function Dashboard({ user, setUser, onLogout, dec, logoText }) {
 
     if (targetSnapshot.exists()) {
       const tData = targetSnapshot.val();
-      targetName = tData.name;
+      targetName = tData.name || "Noma'lum";
       targetPhone = tData.phone || "Kiritilmagan";
       targetLink = tData.telegramLink || "";
     }
 
-    await set(push(ref(db, 'reports')), {
-      reporterId: user.telegramId,
-      reporterName: user.name,
-      reporterPhone: user.phone || 'Noma\'lum',
+    await push(ref(db, 'reports'), {
+      reporterId: currentUserId,
+      reporterName: user.name || "Noma'lum",
+      reporterPhone: user.phone || 'Kiritilmagan',
       reporterLink: user.telegramLink || '',
       accusedId: targetId,
       accusedName: targetName,
@@ -347,21 +364,17 @@ function Dashboard({ user, setUser, onLogout, dec, logoText }) {
     setTargetId(''); setReportReason('');
   };
 
-  // YaQIN ATROF VA REYTING BO'YICHA FILTRLASh (Ish beruvchi qidiruvi)
   const getFilteredWorkers = () => {
     let list = [...allWorkers];
-    if (searchQuery) list = list.filter(w => w.name.toLowerCase().includes(searchQuery.toLowerCase()));
+    if (searchQuery) list = list.filter(w => w.name && w.name.toLowerCase().includes(searchQuery.toLowerCase()));
 
-    // Agar format online bo'lsa manzil o'chadi, reyting eng kottalari tepaga chiqadi
     if (selectedFormat === 'online') {
       return list.sort((a, b) => Number(b.rating || 0) - Number(a.rating || 0));
     } else {
-      // Offline bo'lsa yaqin atrofdan tuman bo'yicha filter va saralash
-      return list.filter(w => w.district === user.district);
+      return list.filter(w => w.district && w.district.toLowerCase() === (user.district || '').toLowerCase());
     }
   };
 
-  // Ishchi uchun kelgan mos e'lonlar filteri
   const getFilteredJobs = () => {
     let list = [...allJobs];
     if (selectedCategory !== 'All') list = list.filter(j => j.category === selectedCategory);
@@ -369,8 +382,7 @@ function Dashboard({ user, setUser, onLogout, dec, logoText }) {
     return list;
   };
 
-  // Telegram avtomatik avto-xabar ssilkasi generatori
-  const proTelegramText = encodeURIComponent(`Salom Temur, men Worky saytida PRO sotib olmoqchiman. Mening Worky ID raqamim: ${user.telegramId}`);
+  const proTelegramText = encodeURIComponent(`Salom Temur, men Worky saytida PRO sotib olmoqchiman. Mening Worky ID raqamim: ${currentUserId}`);
 
   return (
     <div style={styles.dashboardContainer}>
@@ -382,7 +394,7 @@ function Dashboard({ user, setUser, onLogout, dec, logoText }) {
             <h3 style={{ color: '#fff', margin: '0 0 0 5px' }}>{logoText}</h3>
           </div>
           <div style={{marginTop: '5px'}}>
-            {user.avatar ? <img src={user.avatar} alt="avatar" style={styles.sideAvatar} /> : <div style={styles.sideNoAvatar}>{user.name[0]}</div>}
+            {user.avatar ? <img src={user.avatar} alt="avatar" style={styles.sideAvatar} /> : <div style={styles.sideNoAvatar}>{user.name ? user.name[0] : 'U'}</div>}
           </div>
           <span style={styles.roleBadge}>{user.role === 'worker' ? '👷 Ishchi' : '💼 Ish Beruvchi'}</span>
           {user.isPro ? <span style={styles.proActiveBadge}>👑 PRO FAOL</span> : <button onClick={() => setShowProModal(true)} style={styles.getProBtn}>👑 PRO OLISh</button>}
@@ -406,14 +418,13 @@ function Dashboard({ user, setUser, onLogout, dec, logoText }) {
       <div style={styles.mainContent}>
         {activeTab === 'main' && (
           <div style={styles.welcomeCard}>
-            <h1 style={{ color: 'var(--main-color, #1D9E75)', margin: '0 0 10px 0' }}>Xush kelibsiz, {user.name}!</h1>
-            <p>🆔 Sizning unikal Worky ID: <b>{user.telegramId}</b> (Buni shikoyatlarda ishlating)</p>
-            <p>📍 Sizning hududingiz: <b>{user.region}, {user.district}</b></p>
+            <h1 style={{ color: 'var(--main-color, #1D9E75)', margin: '0 0 10px 0' }}>Xush kelibsiz, {user.name || 'Foydalanuvchi'}!</h1>
+            <p>🆔 Sizning unikal Worky ID: <b>{currentUserId}</b> (Buni shikoyatlarda ishlating)</p>
+            <p>📍 Sizning hududingiz: <b>{user.region || 'Kiritilmagan'}, {user.district || 'Kiritilmagan'}</b></p>
             <p>📊 Status: {user.isPro ? <b style={{color: '#f1c40f'}}>👑 PRO Premium Foydalanuvchi</b> : <b>Oddiy rejim</b>}</p>
           </div>
         )}
 
-        {/* PROFIL TAHRIRLASh OYNASI */}
         {activeTab === 'profile' && (
           <div style={styles.cardContainer}>
             <h2>👤 Profilni tahrirlash</h2>
@@ -427,6 +438,12 @@ function Dashboard({ user, setUser, onLogout, dec, logoText }) {
               <label style={styles.label}>Telegram Profil Linki (Majburiy):</label>
               <input type="text" value={profileLink} onChange={(e) => setProfileLink(e.target.value)} style={styles.inputField} placeholder="https://t.me/username" />
 
+              <label style={styles.label}>Viloyat / Shahar:</label>
+              <input type="text" value={profileRegion} onChange={(e) => setProfileRegion(e.target.value)} style={styles.inputField} placeholder="Masalan: Toshkent" />
+
+              <label style={styles.label}>Tuman:</label>
+              <input type="text" value={profileDistrict} onChange={(e) => setProfileDistrict(e.target.value)} style={styles.inputField} placeholder="Masalan: Yunusobod" />
+
               <label style={styles.label}>Profil rasmi (Avatar):</label>
               <input type="file" accept="image/*" onChange={handleImageChange} style={styles.fileInput} />
               {profileImg && <img src={profileImg} alt="Preview" style={styles.avatarPreview} />}
@@ -436,7 +453,6 @@ function Dashboard({ user, setUser, onLogout, dec, logoText }) {
           </div>
         )}
 
-        {/* ISH BERUVCHI: ISH QO'SHISh */}
         {activeTab === 'add_job' && user.role === 'employer' && (
           <div style={styles.cardContainer}>
             <h2>➕ Yangi ish e'loni yaratish</h2>
@@ -446,8 +462,8 @@ function Dashboard({ user, setUser, onLogout, dec, logoText }) {
                 {CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}
               </select>
               <select value={jobFormat} onChange={(e) => setJobFormat(e.target.value)} style={styles.inputField}>
-                <option value="offline">Offline (Tuman bo'yicha usta)</option>
-                <option value="online">Online (Masofaviy ish)</option>
+                <option value="offline">Offline (Tuman bo'yicha yaqin atrofdan qidirish)</option>
+                <option value="online">Online (Masofaviy ish - Butun Respublika)</option>
               </select>
               <input type="text" placeholder="To'lov maoshi (Masalan: 300,000 so'm / kunlik)" value={jobSalary} onChange={(e) => setJobSalary(e.target.value)} style={styles.inputField} />
               <input type="text" placeholder="Ish vaqti / soati (Masalan: Kuniga 6 soat)" value={jobHours} onChange={(e) => setJobHours(e.target.value)} style={styles.inputField} />
@@ -457,16 +473,15 @@ function Dashboard({ user, setUser, onLogout, dec, logoText }) {
           </div>
         )}
 
-        {/* ISH BERUVCHI: MENING E'LONLARIM */}
         {activeTab === 'my_jobs' && user.role === 'employer' && (
           <div>
             <h2>📋 Siz joylagan ish e'lonlari</h2>
             <div style={styles.workersGrid}>
-              {allJobs.filter(j => j.employerId === user.telegramId).map(job => (
+              {allJobs.filter(j => j.employerId === currentUserId).map(job => (
                 <div key={job.id} style={styles.workerCard}>
                   <h3>{job.title}</h3>
                   <p>📁 <b>Kategoriya:</b> {job.category}</p>
-                  <p>🌐 <b>Format:</b> {job.format.toUpperCase()}</p>
+                  <p>🌐 <b>Format:</b> {(job.format || '').toUpperCase()}</p>
                   <p>💰 <b>Maosh:</b> {job.salary}</p>
                   <p>⏱️ <b>Vaqt:</b> {job.hours}</p>
                   <p>📝 <b>Izoh:</b> {job.desc}</p>
@@ -477,35 +492,35 @@ function Dashboard({ user, setUser, onLogout, dec, logoText }) {
           </div>
         )}
 
-        {/* ISH BERUVCHI: ISHChILARI QIDIRISh (YaQIN ATROF VA REYTING) */}
         {activeTab === 'find_workers' && user.role === 'employer' && (
           <div>
-            <h2>🔍 Ishchilarni aqlli tizim orqali qidirish</h2>
+            <h2>🔍 Ishchilarni tizim orqali qidirish</h2>
             <div style={{display: 'flex', gap: '10px', marginBottom: '20px', flexWrap: 'wrap'}}>
               <input type="text" placeholder="Ism bo'yicha qidirish..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} style={styles.filterInput} />
               <select value={selectedFormat} onChange={(e) => setSelectedFormat(e.target.value)} style={styles.selectFilter}>
-                <option value="offline">Offline (Faqat mening tumanim: {user.district})</option>
-                <option value="online">Online (Butun Respublika - Reytingi eng balandlar)</option>
+                <option value="offline">Offline (Mening tumanimda: {user.district || 'Tanlanmagan'})</option>
+                <option value="online">Online (Butun Respublika - Reytingi balandlar)</option>
               </select>
             </div>
             <div style={styles.workersGrid}>
               {getFilteredWorkers().map(w => {
-                const app = sentApplications.find(a => a.workerId === w.telegramId);
+                const workerIdentifier = w.telegramId || w.id;
+                const app = sentApplications.find(a => a.workerId === workerIdentifier && a.employerId === currentUserId);
+
                 return (
                   <div key={w.id} style={styles.workerCard}>
                     <div style={{display: 'flex', alignItems: 'center', gap: '10px'}}>
-                      {w.avatar ? <img src={w.avatar} alt="avatar" style={styles.cardAvatar} /> : <div style={styles.cardNoAvatar}>{w.name[0]}</div>}
+                      {w.avatar ? <img src={w.avatar} alt="avatar" style={styles.cardAvatar} /> : <div style={styles.cardNoAvatar}>{w.name ? w.name[0] : 'U'}</div>}
                       <div>
                         <h3 style={{margin: '0'}}>{w.name} {w.isPro && "👑"}</h3>
-                        <span style={styles.ratingStars}>⭐ {w.rating || "Baholanmagan"}</span>
+                        <span style={styles.ratingStars}>⭐ {w.rating || "0.0"}</span>
                       </div>
                     </div>
-                    <p style={{margin: '10px 0 5px'}}>📍 <b>Manzil:</b> {w.region}, {w.district}</p>
+                    <p style={{margin: '10px 0 5px'}}>📍 <b>Manzil:</b> {w.region || "Noma'lum"}, {w.district || "Noma'lum"}</p>
 
-                    {/* Baholash tugmasi */}
-                    <button onClick={() => setActiveReviewWorkerId(w.telegramId)} style={styles.reviewToggleBtn}>⭐ Sharh va Baho qoldirish</button>
+                    <button onClick={() => setActiveReviewWorkerId(workerIdentifier)} style={styles.reviewToggleBtn}>⭐ Sharh va Baho qoldirish</button>
 
-                    {activeReviewWorkerId === w.telegramId && (
+                    {activeReviewWorkerId === workerIdentifier && (
                       <form onSubmit={handleSubmitReview} style={styles.reviewForm}>
                         <select value={reviewRating} onChange={(e) => setReviewRating(e.target.value)} style={styles.inputField}>
                           <option value="5">⭐⭐⭐⭐⭐ (5)</option>
@@ -519,17 +534,16 @@ function Dashboard({ user, setUser, onLogout, dec, logoText }) {
                       </form>
                     )}
 
-                    {/* STATUSLAR VA ALOQA */}
                     {!app && (
                       <button onClick={() => handleSendApplication(w)} style={{...styles.actionButton, backgroundColor: 'var(--main-color)', width: '100%', padding: '10px', marginTop: '10px'}}>🚀 Ishga taklif qilish</button>
                     )}
-                    {app && app.status === 'pending' && <button style={{...styles.actionButton, backgroundColor: '#f39c12', width: '100%', padding: '10px', marginTop: '10px', cursor: 'not-allowed'}} disabled>⏳ Kutilmoqda...</button>}
-                    {app && app.status === 'declined' && <button style={{...styles.actionButton, backgroundColor: '#e74c3c', width: '100%', padding: '10px', marginTop: '10px', cursor: 'not-allowed'} } disabled>❌ Rad etdi</button>}
+                    {app && app.status === 'pending' && <button style={{...styles.actionButton, backgroundColor: '#f39c12', width: '100%', padding: '10px', marginTop: '10px', cursor: 'not-allowed'} } disabled>⏳ Kutilmoqda...</button>}
+                    {app && app.status === 'declined' && <button style={{...styles.actionButton, backgroundColor: '#e74c3c', width: '100%', padding: '10px', marginTop: '10px', cursor: 'not-allowed'}} disabled>❌ Rad etdi</button>}
                     {app && app.status === 'accepted' && (
                       <div style={{marginTop: '10px', borderTop: '1px solid #eee', paddingTop: '10px'}}>
                         <p style={{color: '#2ecc71', fontWeight: 'bold', margin: '5px 0', fontSize: '13px'}}>✅ Taklif qabul qilingan!</p>
                         <div style={{display: 'flex', gap: '5px'}}>
-                          <button onClick={() => window.open(w.telegramLink || `https://t.me/user?id=${w.telegramId}`, '_blank')} style={{...styles.actionButton, backgroundColor: '#24A1DE', flex: 1, padding: '8px'}}>💬 Telegram</button>
+                          <button onClick={() => window.open(w.telegramLink || `https://t.me/user?id=${workerIdentifier}`, '_blank')} style={{...styles.actionButton, backgroundColor: '#24A1DE', flex: 1, padding: '8px'}}>💬 Telegram</button>
                           <button onClick={() => window.open(`tel:${w.phone}`)} style={{...styles.actionButton, backgroundColor: '#34495e', flex: 1, padding: '8px'}}>📞 Tel</button>
                         </div>
                       </div>
@@ -541,7 +555,6 @@ function Dashboard({ user, setUser, onLogout, dec, logoText }) {
           </div>
         )}
 
-        {/* ISHCHI: ISH E'LONLARI TASMASI (FEED) */}
         {activeTab === 'job_feed' && user.role === 'worker' && (
           <div>
             <h2>🗂️ Platformadagi barcha ish e'lonlari</h2>
@@ -561,7 +574,7 @@ function Dashboard({ user, setUser, onLogout, dec, logoText }) {
                 <div key={job.id} style={{...styles.workerCard, borderTop: '4px solid #3498db'}}>
                   <h3>{job.title}</h3>
                   <p>📁 <b>Kategoriya:</b> {job.category}</p>
-                  <p>🌐 <b>Format:</b> {job.format.toUpperCase()}</p>
+                  <p>🌐 <b>Format:</b> {(job.format || '').toUpperCase()}</p>
                   <p>📍 <b>Manzil:</b> {job.region}, {job.district}</p>
                   <p>💰 <b>Maosh:</b> <span style={{color: '#2ecc71', fontWeight: 'bold'}}>{job.salary}</span></p>
                   <p>⏱️ <b>Ish soati:</b> {job.hours}</p>
@@ -579,16 +592,15 @@ function Dashboard({ user, setUser, onLogout, dec, logoText }) {
           </div>
         )}
 
-        {/* ISHCHI: KELGAN ARIZALAR JADVALI */}
         {activeTab === 'my_requests' && user.role === 'worker' && (
           <div>
-            <h2>📩 Sizga to'g'ridan-to'g'ri kelgan ish takliflari</h2>
+            <h2>📩 Sizga kelgan to'g'ridan-to'g'ri ish takliflari</h2>
             <div style={styles.workersGrid}>
               {myApplications.map(app => (
                 <div key={app.id} style={styles.workerCard}>
                   <h3>{app.employerName}</h3>
-                  <p>🆔 **Ish beruvchi ID:** {app.employerId}</p>
-                  <p>📊 **Holat:** {app.status.toUpperCase()}</p>
+                  <p>🆔 <b>Ish beruvchi ID:</b> {app.employerId}</p>
+                  <p>📊 <b>Holat:</b> {(app.status || '').toUpperCase()}</p>
                   {app.status === 'pending' && (
                     <div style={{display: 'flex', gap: '5px', marginTop: '10px'}}>
                       <button onClick={() => handleAcceptApp(app.id)} style={{...styles.actionButton, backgroundColor: '#2ecc71', flex: 1, padding: '10px'}}>✅ Qabul qilish</button>
@@ -607,31 +619,29 @@ function Dashboard({ user, setUser, onLogout, dec, logoText }) {
           </div>
         )}
 
-        {/* JONLI MUFFASAL SHIKOYAT OYNASI */}
         {activeTab === 'report' && (
           <div style={styles.cardContainer}>
             <h2>🚨 Shikoyat arizasini topshirish</h2>
             <form onSubmit={handleSendReport} style={styles.dashboardForm}>
-              <input type="number" placeholder="Qoidabuzarning Worky ID raqami..." value={targetId} onChange={(e) => setTargetId(e.target.value)} style={styles.inputField} />
-              <textarea placeholder="Qoidabuzarlik sababini daxshat batafsil yozing (Admin ko'rib chiqadi)..." value={reportReason} onChange={(e) => setReportReason(e.target.value)} style={styles.textareaField}></textarea>
-              <button type="submit" style={{ ...styles.actionButton, backgroundColor: '#e74c3c', padding: '12px' }}>Shikoyatni Adminga Yuborish</button>
+              <input type="text" placeholder="Qoidabuzarning Worky ID raqami..." value={targetId} onChange={(e) => setTargetId(e.target.value)} style={styles.inputField} />
+              <textarea placeholder="Qoidabuzarlik sababini daxshat batafsil yozing..." value={reportReason} onChange={(e) => setReportReason(e.target.value)} style={styles.textareaField}></textarea>
+              <button type="submit" style={{ ...styles.actionButton, backgroundColor: '#e74c3c', padding: '12px' }}>Shikoyatni Yuborish</button>
             </form>
           </div>
         )}
       </div>
 
-      {/* SIZ XOHLAGAN PRO MODAL OYNASI */}
       {showProModal && (
         <div style={styles.modalOverlay}>
           <div style={styles.modalContent}>
             <h2 style={{color: '#f1c40f', margin: '0 0 15px 0'}}>👑 Worky PRO Rejimga O'tish</h2>
             <p>PRO nishoniga ega bo'lish uchun to'lovni bajaring va adminga skrinshot tashlang:</p>
             <div style={styles.cardDetails}>
-              💳 <b>Karta raqam:</b> <code style={{fontSize: '16px'}}>8600123456789012</code> (Temur)<br/>
+              💳 <b>Karta raqam:</b> <code style={{fontSize: '16px'}}>8600123456789012</code><br/>
               💰 <b>Narxi:</b> 50,000 so'm (1 oylik faol muddat)
             </div>
             <div style={{margin: '15px 0'}}>
-              Sizning unikal Worky ID: <b>{user.telegramId}</b>
+              Sizning unikal Worky ID: <b>{currentUserId}</b>
             </div>
             <div style={{display: 'flex', gap: '10px'}}>
               <button onClick={() => window.open(`https://t.me/logotipshop10?text=${proTelegramText}`, '_blank')} style={styles.modalTelegramBtn}>💬 Adminga Chek va ID Yuborish</button>
@@ -657,14 +667,12 @@ function AdminPanel({ onLogout, currentHoliday, logoText }) {
   const [proUserId, setProUserId] = useState('');
 
   useEffect(() => {
-    // Kelgan shikoyatlarni to'liq ma'lumotlar bilan real-time olish
     onValue(ref(db, 'reports'), (snapshot) => {
       const data = snapshot.val();
       if (data) setReports(Object.keys(data).map(key => ({ id: key, ...data[key] })));
       else setReports([]);
     });
 
-    // Foydalanuvchilarni boshqarish uchun olish
     onValue(ref(db, 'users'), (snapshot) => {
       const data = snapshot.val();
       if (data) setUsersList(Object.keys(data).map(key => ({ id: key, ...data[key] })));
@@ -678,12 +686,12 @@ function AdminPanel({ onLogout, currentHoliday, logoText }) {
     alert('Barcha stil, bayramona bezaklar va logotip sozlamalari butun sayt bo\'ylab muvaffaqiyatli saqlandi!');
   };
 
-  // 1 OYLIK AVTOMATIK PRO TAYMER TIZIMI
   const handleActivatePro = async (targetId) => {
-    const expireTime = Date.now() + 30 * 24 * 60 * 60 * 1000; // Roppa-rosa 30 kun keyingi vaqt millisekundda
+    if(!targetId) return alert("ID kiriting");
+    const expireTime = Date.now() + 30 * 24 * 60 * 60 * 1000;
     await set(ref(db, `users/${targetId}/isPro`), true);
     await set(ref(db, `users/${targetId}/proExpireAt`), expireTime);
-    alert(`ID: ${targetId} foydalanuvchiga 1 oylik PRO muvaffaqiyatli berildi va avto-taymer ishga tushdi!`);
+    alert(`ID: ${targetId} foydalanuvchiga 1 oylik PRO muvaffaqiyatli berildi!`);
   };
 
   return (
@@ -694,12 +702,11 @@ function AdminPanel({ onLogout, currentHoliday, logoText }) {
       </div>
       <div style={styles.adminGrid}>
 
-        {/* TO'LIQLIGICHA JONLI SHIKOYATLAR TUZILMASI */}
         <div style={{...styles.adminCard, borderTop: '5px solid #e74c3c'}}>
           <h3>🚨 Foydalanuvchilar Shikoyat Oynasi</h3>
           {reports.length === 0 ? <p>Hozircha shikoyatlar kelmagan.</p> : reports.map(rep => (
             <div key={rep.id} style={styles.reportCard}>
-              <p style={{color: '#c0392b', fontWeight: 'bold'}}>⚠️ SABAB: {rep.reason}</p>
+              <p style={{color: '#ef4444', fontWeight: 'bold'}}>⚠️ SABAB: {rep.reason}</p>
               <div style={{background: '#fff', padding: '10px', borderRadius: '6px', marginBottom: '5px', border: '1px solid #f5c6cb'}}>
                 <b>🟢 Shikoyat Qilgan (Da'vogar):</b><br/>
                 Ism: {rep.reporterName} (ID: {rep.reporterId})<br/>
@@ -713,32 +720,33 @@ function AdminPanel({ onLogout, currentHoliday, logoText }) {
                 Link: <a href={rep.accusedLink} target="_blank" rel="noreferrer">Telegram Profil</a>
               </div>
               <div style={{display: 'flex', gap: '5px', marginTop: '10px'}}>
-                <button onClick={() => window.open(`tel:${rep.accusedPhone}`)} style={{...styles.actionButton, backgroundColor: '#34495e', padding: '5px 10px', fontSize: '12px'}}>📞 Qoidabuzarga Tel Qilish</button>
-                <button onClick={async () => { await remove(ref(db, `reports/${rep.id}`)); alert('Shikoyat o\'chirildi'); }} style={{backgroundColor: '#e74c3c', color: '#fff', border: 'none', padding: '5px 10px', borderRadius: '4px', cursor: 'pointer', fontSize: '12px'}}>❌ Shikoyatni O'chirish</button>
+                <button onClick={() => window.open(`tel:${rep.accusedPhone}`)} style={{...styles.actionButton, backgroundColor: '#34495e', padding: '5px 10px', fontSize: '12px'}}>📞 Tel Qilish</button>
+                <button onClick={async () => { await remove(ref(db, `reports/${rep.id}`)); alert('Shikoyat o\'chirildi'); }} style={{backgroundColor: '#ef4444', color: '#fff', border: 'none', padding: '5px 10px', borderRadius: '4px', cursor: 'pointer', fontSize: '12px'}}>❌ O'chirish</button>
               </div>
             </div>
           ))}
         </div>
 
-        {/* PRO FAOL QILISH PANELI */}
         <div style={{...styles.adminCard, borderTop: '5px solid #f1c40f'}}>
-          <h3>👑 PRO Rejimni Faollashtirish (30 kunlik avto-taymer)</h3>
+          <h3>👑 PRO Rejimni Faollashtirish (30 kunlik)</h3>
           <div style={{display: 'flex', gap: '5px', marginBottom: '15px'}}>
-            <input type="number" placeholder="Foydalanuvchi Worky ID..." value={proUserId} onChange={(e) => setProUserId(e.target.value)} style={styles.inputField} />
+            <input type="text" placeholder="Foydalanuvchi Worky ID..." value={proUserId} onChange={(e) => setProUserId(e.target.value)} style={styles.inputField} />
             <button onClick={() => { handleActivatePro(proUserId); setProUserId(''); }} style={{backgroundColor: '#f1c40f', color: '#000', border: 'none', padding: '10px', borderRadius: '6px', fontWeight: 'bold', cursor: 'pointer'}}>PRO Aktiv Qilish</button>
           </div>
           <h4>Hozirgi foydalanuvchilar:</h4>
           <div style={{maxHeight: '200px', overflowY: 'auto'}}>
-            {usersList.map(u => (
-              <div key={u.id} style={{display: 'flex', justifyContent: 'space-between', padding: '5px 0', borderBottom: '1px solid #eee', fontSize: '13px'}}>
-                <span>{u.name} (ID: {u.telegramId})</span>
-                {u.isPro ? <span style={{color: '#2ecc71'}}>Active ✅</span> : <button onClick={() => handleActivatePro(u.telegramId)} style={{fontSize: '11px', backgroundColor: '#e67e22', color: '#fff', border: 'none', cursor: 'pointer', borderRadius: '3px'}}>PRO Berish</button>}
-              </div>
-            ))}
+            {usersList.map(u => {
+              const uId = u.telegramId || u.id;
+              return (
+                <div key={u.id} style={{display: 'flex', justifyContent: 'space-between', padding: '5px 0', borderBottom: '1px solid #eee', fontSize: '13px'}}>
+                  <span>{u.name || "Ismsiz"} (ID: {uId})</span>
+                  {u.isPro ? <span style={{color: '#2ecc71'}}>Active ✅</span> : <button onClick={() => handleActivatePro(uId)} style={{fontSize: '11px', backgroundColor: '#e67e22', color: '#fff', border: 'none', cursor: 'pointer', borderRadius: '3px'}}>PRO Berish</button>}
+                </div>
+              );
+            })}
           </div>
         </div>
 
-        {/* STIL, BAYRAMLAR VA LOGOTIPNI BOSHQARISh */}
         <div style={{...styles.adminCard, borderTop: '5px solid #2ecc71'}}>
           <h3>🎨 Stil & Dinamik Bayram Sozlamalari</h3>
           <form onSubmit={handleThemeSave} style={{display: 'flex', flexDirection: 'column', gap: '10px'}}>
@@ -758,11 +766,11 @@ function AdminPanel({ onLogout, currentHoliday, logoText }) {
             <label style={{fontSize: '13px', fontWeight: 'bold'}}>O'zgaruvchan Logotip Matni:</label>
             <input type="text" value={logoInput} onChange={(e) => setLogoInput(e.target.value)} style={styles.inputField} />
 
-            <label style={{fontSize: '13px', fontWeight: 'bold'}}>Bayramlar va Muhim Kunlar Rejimi:</label>
+            <label style={{fontSize: '13px', fontWeight: 'bold'}}>Bayramlar Rejimi:</label>
             <select value={holiday} onChange={(e) => setHoliday(e.target.value)} style={styles.inputField}>
               <option value="oddiy">Oddiy Rejim (Emojilar standart)</option>
-              <option value="yangi_yil">❄️ Yangi yil rejim (Qor parchalari & Archa)</option>
-              <option value="navruz">🌱 Navro'z bayrami rejim (Bahoriy stillar)</option>
+              <option value="yangi_yil">❄️ Yangi yil rejim</option>
+              <option value="navruz">🌱 Navro'z bayrami rejim</option>
               <option value="ramazon">🌙 Ramazon oyi muqaddas rejim</option>
             </select>
 
@@ -784,7 +792,7 @@ const styles = {
   input: { width: '100%', padding: '12px 15px', borderRadius: '8px', border: '1px solid #e2e8f0', fontSize: '15px', boxSizing: 'border-box', outline: 'none' },
   loginNote: { background: '#fff9db', border: '1px solid #ffe066', borderRadius: '8px', padding: '12px', fontSize: '11px', textAlign: 'left', color: '#666', lineHeight: '1.5' },
   button: { width: '100%', padding: '12px', borderRadius: '8px', border: 'none', backgroundColor: 'var(--main-color, #1D9E75)', color: '#fff', fontSize: '16px', cursor: 'pointer', fontWeight: 'bold', marginTop: '5px' },
-  errorText: { color: '#e74c3c', fontSize: '13px', margin: '0' },
+  errorText: { color: '#ef4444', fontSize: '13px', margin: '0' },
 
   dashboardContainer: { display: 'flex', height: '100vh', backgroundColor: 'var(--bg-color, #F7F8FA)' },
   sidebar: { width: '270px', backgroundColor: '#1e293b', padding: '20px', display: 'flex', flexDirection: 'column', gap: '10px', overflowY: 'auto' },
@@ -811,7 +819,7 @@ const styles = {
   filterInput: { flex: 1, minWidth: '250px', padding: '11px 15px', borderRadius: '8px', border: '1px solid #cbd5e1', fontSize: '14px', outline: 'none' },
   selectFilter: { padding: '11px', borderRadius: '8px', border: '1px solid #cbd5e1', fontSize: '14px', outline: 'none', cursor: 'pointer' },
   workersGrid: { display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: '20px', marginTop: '15px' },
-  workerCard: { backgroundColor: '#fff', padding: '20px', borderRadius: '12px', boxShadow: '0 4px 15px rgba(0,0,0,0.03)', borderTop: '4px solid var(--main-color)', display: 'flex', flexDirection: 'column', justifyBetween: 'space-between' },
+  workerCard: { backgroundColor: '#fff', padding: '20px', borderRadius: '12px', boxShadow: '0 4px 15px rgba(0,0,0,0.03)', borderTop: '4px solid var(--main-color)', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' },
   cardAvatar: { width: '45px', height: '45px', borderRadius: '50%', objectFit: 'cover' },
   cardNoAvatar: { width: '45px', height: '45px', borderRadius: '50%', backgroundColor: 'var(--main-color)', color: '#fff', display: 'flex', justifyContent: 'center', alignItems: 'center', fontSize: '18px', fontWeight: 'bold' },
   ratingStars: { fontSize: '12px', fontWeight: 'bold', color: '#f1c40f', background: '#fef9e7', padding: '2px 6px', borderRadius: '4px' },
