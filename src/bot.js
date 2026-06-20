@@ -82,10 +82,12 @@ const regionsData = {
 
 const registerWizard = new Scenes.WizardScene(
   'REGISTER_SCENE',
+  // QADAM 1: Ism
   async (ctx) => {
     await ctx.reply("👋 Worky platformasiga xush kelibsiz!\n\nRo'yxatdan o'tish uchun Ism va Familiyangizni kiriting:");
     return ctx.wizard.next();
   },
+  // QADAM 2: Rol tanlash
   async (ctx) => {
     if (!ctx.message || !ctx.message.text) {
       await ctx.reply("Iltimos, ismingizni matn ko'rinishida yozing:");
@@ -101,9 +103,10 @@ const registerWizard = new Scenes.WizardScene(
     );
     return ctx.wizard.next();
   },
+  // QADAM 3: Telefon raqam
   async (ctx) => {
     if (!ctx.callbackQuery) {
-      await ctx.reply("⚠️ Iltimos, yozma matn yubormang! Pastdagi tugmalardan birini bosing:");
+      await ctx.reply("⚠️ Iltimos, pastdagi tugmalardan birini bosing:");
       return;
     }
     ctx.wizard.state.role = ctx.callbackQuery.data.split(':')[1];
@@ -114,18 +117,21 @@ const registerWizard = new Scenes.WizardScene(
     );
     return ctx.wizard.next();
   },
+  // QADAM 4: Qoidalar
   async (ctx) => {
     if (!ctx.message || (!ctx.message.contact && !ctx.message.text)) {
       await ctx.reply("Iltimos, telefon raqamni yuborish tugmasini bosing:");
       return;
     }
-    ctx.wizard.state.phone = ctx.message.contact ? ctx.message.contact.phone_number : ctx.message.text;
+    ctx.wizard.state.phone = ctx.message.contact
+      ? ctx.message.contact.phone_number
+      : ctx.message.text;
 
     const rulesText =
       "⚠️ Worky Platformasi Foydalanish Qoidalari:\n\n" +
-      "1️⃣ Halollik: Ish beruvchi va ishchi kelishilgan vaqtda va narxda majburiyatlarini bajarishi shart.\n" +
-      "2️⃣ Fake taqiqi: Platformada yolg'on e'lonlar, feyk hisoblar yoki firibgarlik qat'iyan taqiqlanadi.\n" +
-      "3️⃣ Odob-axloq: Haqoratli so'zlar ishlatish akkauntning umrbod bloklanishiga olib keladi.\n" +
+      "1️⃣ Halollik: Kelishilgan vaqtda va narxda majburiyatlarini bajarish shart.\n" +
+      "2️⃣ Fake taqiqi: Yolg'on e'lonlar va firibgarlik qat'iyan taqiqlanadi.\n" +
+      "3️⃣ Odob-axloq: Haqoratli so'zlar ishlatish akkauntning bloklanishiga olib keladi.\n" +
       "4️⃣ Xavfsizlik: To'lov kelishuvlarini faqat tasdiqlangan shaxslar bilan amalga oshiring.\n\n" +
       "Davom etish uchun shartlarni qabul qiling:";
 
@@ -135,9 +141,10 @@ const registerWizard = new Scenes.WizardScene(
     ]));
     return ctx.wizard.next();
   },
+  // QADAM 5: Viloyat tanlash
   async (ctx) => {
     if (!ctx.callbackQuery) {
-      await ctx.reply("⚠️ Iltimos, qoidalarni tugma orqali qabul qiling yoki rad eting:");
+      await ctx.reply("⚠️ Iltimos, qoidalarni tugma orqali qabul qiling:");
       return;
     }
     const status = ctx.callbackQuery.data.split(':')[1];
@@ -160,6 +167,7 @@ const registerWizard = new Scenes.WizardScene(
     await ctx.reply("Viloyatingizni tanlang:", Markup.inlineKeyboard(regionButtons));
     return ctx.wizard.next();
   },
+  // QADAM 6: Tuman tanlash
   async (ctx) => {
     if (!ctx.callbackQuery) {
       await ctx.reply("⚠️ Iltimos, viloyatingizni tugmani bosib tanlang:");
@@ -184,6 +192,7 @@ const registerWizard = new Scenes.WizardScene(
     await ctx.reply("Tumaningizni tanlang:", Markup.inlineKeyboard(districtButtons));
     return ctx.wizard.next();
   },
+  // QADAM 7: Saqlash
   async (ctx) => {
     if (!ctx.callbackQuery) {
       await ctx.reply("⚠️ Iltimos, tumaningizni tugmani bosib tanlang:");
@@ -193,15 +202,19 @@ const registerWizard = new Scenes.WizardScene(
     await ctx.answerCbQuery();
 
     const telegramId = String(ctx.from.id);
+    const username = ctx.from.username || '';
+
     const userData = {
       telegramId: telegramId,
       name: ctx.wizard.state.name,
       role: ctx.wizard.state.role,
       phone: ctx.wizard.state.phone,
+      telegramLink: username ? `https://t.me/${username}` : '',
       region: ctx.wizard.state.region,
       district: districtName,
       isPro: false,
       proExpireAt: "",
+      password: "",
       createdAt: new Date().toISOString()
     };
 
@@ -209,7 +222,8 @@ const registerWizard = new Scenes.WizardScene(
       await set(ref(db, 'users/' + telegramId), userData);
       await ctx.reply(
         "🎉 Ro'yxatdan muvaffaqiyatli o'tdingiz!\n\n" +
-        `🆔 Sizning Worky ID: ${telegramId}\n\n` +
+        `🆔 Sizning Worky ID: ${telegramId}\n` +
+        `📱 Telefon: ${ctx.wizard.state.phone}\n\n` +
         "🌐 Quyidagi tugma orqali saytga o'tib ID raqamingizni kiriting va ish boshlang:",
         Markup.inlineKeyboard([[Markup.button.url("🌐 Worky Saytiga Kirish", "https://worky-0g13.onrender.com/")]])
       );
@@ -235,9 +249,10 @@ bot.start(async (ctx) => {
       await ctx.reply(
         `👤 Worky Profilingiz:\n\n` +
         `🆔 Worky ID: ${telegramId}\n` +
-        `📝 Ism: ${userData.name}\n` +
-        `💼 Rol: ${userData.role === 'worker' ? 'Ishchi' : 'Ish beruvchi'}\n` +
-        `📍 Hudud: ${userData.region}, ${userData.district}\n` +
+        `📝 Ism: ${userData.name || "Kiritilmagan"}\n` +
+        `💼 Rol: ${userData.role === 'worker' ? '👷 Ishchi' : '💼 Ish beruvchi'}\n` +
+        `📍 Hudud: ${userData.region || "Kiritilmagan"}, ${userData.district || "Kiritilmagan"}\n` +
+        `📱 Telefon: ${userData.phone || "Kiritilmagan"}\n` +
         `👑 PRO Holati: ${proStatus}\n\n` +
         `PRO sotib olish uchun saytga kiring va PRO tugmasini bosing!`,
         Markup.inlineKeyboard([[Markup.button.url("🌐 Worky Saytiga Kirish", "https://worky-0g13.onrender.com/")]])
