@@ -177,7 +177,6 @@ export default function App() {
         alert('Sizning PRO obunangiz muddati tugadi. Iltimos, yangilang!');
       }
     }
-    // Har 10 daqiqada tekshirish
     const interval = setInterval(() => {
       if (user.isPro && user.proExpireAt && Date.now() > user.proExpireAt) {
         const myId = user.telegramId || user.id;
@@ -272,6 +271,24 @@ function Dashboard({ user, setUser, onLogout, dec, logoText, currentHoliday }) {
   const [sentApplications, setSentApplications] = useState([]);
   const [showProModal, setShowProModal] = useState(false);
 
+  // ===== BURGER MENYU UCHUN REAKTIV HOLATLAR =====
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
+
+  useEffect(() => {
+    const handleResize = () => {
+      setIsMobile(window.innerWidth < 768);
+      if (window.innerWidth >= 768) setSidebarOpen(false);
+    };
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
+  const handleTabChange = (tab) => {
+    setActiveTab(tab);
+    if (isMobile) setSidebarOpen(false);
+  };
+
   const [profileName, setProfileName] = useState(user.name || '');
   const [profilePhone, setProfilePhone] = useState(user.phone || '');
   const [profileLink, setProfileLink] = useState(user.telegramLink || '');
@@ -299,7 +316,6 @@ function Dashboard({ user, setUser, onLogout, dec, logoText, currentHoliday }) {
   const currentUserId = user.telegramId || user.id;
   const isPro = user.isPro && user.proExpireAt && Date.now() < user.proExpireAt;
 
-  // PRO muddati formatlash
   const proExpireDate = user.proExpireAt ? new Date(user.proExpireAt).toLocaleDateString('uz-UZ') : '';
 
   useEffect(() => {
@@ -328,7 +344,6 @@ function Dashboard({ user, setUser, onLogout, dec, logoText, currentHoliday }) {
     });
   }, [currentUserId]);
 
-  // PRO kerakli amallar uchun bloklash
   const requirePro = (action) => {
     if (!isPro) {
       setShowProModal(true);
@@ -372,7 +387,7 @@ function Dashboard({ user, setUser, onLogout, dec, logoText, currentHoliday }) {
       });
       alert("Ish e'loni muvaffaqiyatli joylandi!");
       setJobTitle(''); setJobSalary(''); setJobHours(''); setJobDesc('');
-      setActiveTab('my_jobs');
+      handleTabChange('my_jobs');
     } catch (err) { alert('Xatolik yuz berdi, qayta urining.'); }
   };
 
@@ -475,48 +490,98 @@ function Dashboard({ user, setUser, onLogout, dec, logoText, currentHoliday }) {
 
   const proTelegramText = encodeURIComponent(`Salom, men Worky saytida PRO sotib olmoqchiman. Mening Worky ID raqamim: ${currentUserId}`);
 
+  const SidebarContent = () => (
+    <>
+      <div style={{ textAlign: 'center', marginBottom: '15px' }}>
+        <div style={styles.logoRowSidebar}>
+          <span style={{ fontSize: '20px' }}>{dec.emoji}</span>
+          <h3 style={{ color: '#fff', margin: '0 0 0 5px' }}>{logoText}</h3>
+        </div>
+        <div style={{ marginTop: '5px' }}>
+          {user.avatar
+            ? <img src={user.avatar} alt="avatar" style={styles.sideAvatar} />
+            : <div style={styles.sideNoAvatar}>{user.name ? user.name[0] : 'U'}</div>}
+        </div>
+        <p style={{ color: '#94a3b8', fontSize: '12px', margin: '5px 0 0' }}>🆔 {currentUserId}</p>
+        <span style={styles.roleBadge}>{user.role === 'worker' ? '👷 Ishchi' : '💼 Ish Beruvchi'}</span>
+        {isPro
+          ? <div>
+              <span style={styles.proActiveBadge}>👑 PRO FAOL</span>
+              <p style={{ color: '#ffd700', fontSize: '11px', margin: '4px 0 0' }}>📅 {proExpireDate} gacha</p>
+            </div>
+          : <button onClick={() => { setShowProModal(true); if (isMobile) setSidebarOpen(false); }} style={styles.getProBtn}>👑 PRO OLISH</button>
+        }
+      </div>
+
+      <button onClick={() => handleTabChange('main')} style={{ ...styles.menuBtn, backgroundColor: activeTab === 'main' ? 'var(--main-color)' : '#34495e' }}>🏠 Bosh sahifa</button>
+      <button onClick={() => handleTabChange('profile')} style={{ ...styles.menuBtn, backgroundColor: activeTab === 'profile' ? 'var(--main-color)' : '#34495e' }}>👤 Profil sozlamalari</button>
+      {user.role === 'employer' && <button onClick={() => handleTabChange('add_job')} style={{ ...styles.menuBtn, backgroundColor: activeTab === 'add_job' ? 'var(--main-color)' : '#34495e' }}>➕ Yangi Ish Qo'shish {!isPro && '🔒'}</button>}
+      {user.role === 'employer' && <button onClick={() => handleTabChange('my_jobs')} style={{ ...styles.menuBtn, backgroundColor: activeTab === 'my_jobs' ? 'var(--main-color)' : '#34495e' }}>📋 Mening E'lonlarim</button>}
+      {user.role === 'employer' && <button onClick={() => handleTabChange('find_workers')} style={{ ...styles.menuBtn, backgroundColor: activeTab === 'find_workers' ? 'var(--main-color)' : '#34495e' }}>🔍 Ishchi Qidirish {!isPro && '🔒'}</button>}
+      {user.role === 'worker' && <button onClick={() => handleTabChange('job_feed')} style={{ ...styles.menuBtn, backgroundColor: activeTab === 'job_feed' ? 'var(--main-color)' : '#34495e' }}>🗂️ Ish E'lonlari</button>}
+      {user.role === 'worker' && <button onClick={() => handleTabChange('my_requests')} style={{ ...styles.menuBtn, backgroundColor: activeTab === 'my_requests' ? 'var(--main-color)' : '#34495e' }}>📩 Kelgan Takliflar ({myApplications.filter(a => a.status === 'pending').length}) {!isPro && '🔒'}</button>}
+      <button onClick={() => handleTabChange('report')} style={{ ...styles.menuBtn, backgroundColor: activeTab === 'report' ? 'var(--main-color)' : '#34495e' }}>🚨 Shikoyat Berish</button>
+      <button onClick={onLogout} style={styles.logoutBtn}>Chiqish</button>
+    </>
+  );
+
   return (
     <div style={styles.dashboardContainer}>
       <HolidayEffect holiday={currentHoliday} />
 
-      {/* SIDEBAR */}
-      <div style={styles.sidebar}>
-        <div style={{ textAlign: 'center', marginBottom: '15px' }}>
-          <div style={styles.logoRowSidebar}>
-            <span style={{ fontSize: '20px' }}>{dec.emoji}</span>
-            <h3 style={{ color: '#fff', margin: '0 0 0 5px' }}>{logoText}</h3>
+      {/* ===== MOBIL: YUQORI NAVBAR ===== */}
+      {isMobile && (
+        <div style={styles.mobileTopBar}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <span style={{ fontSize: '18px' }}>{dec.emoji}</span>
+            <span style={{ color: '#fff', fontWeight: 'bold', fontSize: '18px' }}>{logoText}</span>
           </div>
-          <div style={{ marginTop: '5px' }}>
-            {user.avatar
-              ? <img src={user.avatar} alt="avatar" style={styles.sideAvatar} />
-              : <div style={styles.sideNoAvatar}>{user.name ? user.name[0] : 'U'}</div>}
-          </div>
-          <p style={{ color: '#94a3b8', fontSize: '12px', margin: '5px 0 0' }}>🆔 {currentUserId}</p>
-          <span style={styles.roleBadge}>{user.role === 'worker' ? '👷 Ishchi' : '💼 Ish Beruvchi'}</span>
-          {isPro
-            ? <div>
-                <span style={styles.proActiveBadge}>👑 PRO FAOL</span>
-                <p style={{ color: '#ffd700', fontSize: '11px', margin: '4px 0 0' }}>📅 {proExpireDate} gacha</p>
-              </div>
-            : <button onClick={() => setShowProModal(true)} style={styles.getProBtn}>👑 PRO OLISH</button>
-          }
+          <button
+            onClick={() => setSidebarOpen(!sidebarOpen)}
+            style={styles.burgerBtn}
+            aria-label="Menyuni ochish"
+          >
+            {sidebarOpen ? (
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round">
+                <line x1="18" y1="6" x2="6" y2="18" />
+                <line x1="6" y1="6" x2="18" y2="18" />
+              </svg>
+            ) : (
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round">
+                <line x1="3" y1="6" x2="21" y2="6" />
+                <line x1="3" y1="12" x2="21" y2="12" />
+                <line x1="3" y1="18" x2="21" y2="18" />
+              </svg>
+            )}
+          </button>
         </div>
+      )}
 
-        <button onClick={() => setActiveTab('main')} style={{ ...styles.menuBtn, backgroundColor: activeTab === 'main' ? 'var(--main-color)' : '#34495e' }}>🏠 Bosh sahifa</button>
-        <button onClick={() => setActiveTab('profile')} style={{ ...styles.menuBtn, backgroundColor: activeTab === 'profile' ? 'var(--main-color)' : '#34495e' }}>👤 Profil sozlamalari</button>
-        {user.role === 'employer' && <button onClick={() => setActiveTab('add_job')} style={{ ...styles.menuBtn, backgroundColor: activeTab === 'add_job' ? 'var(--main-color)' : '#34495e' }}>➕ Yangi Ish Qo'shish {!isPro && '🔒'}</button>}
-        {user.role === 'employer' && <button onClick={() => setActiveTab('my_jobs')} style={{ ...styles.menuBtn, backgroundColor: activeTab === 'my_jobs' ? 'var(--main-color)' : '#34495e' }}>📋 Mening E'lonlarim</button>}
-        {user.role === 'employer' && <button onClick={() => setActiveTab('find_workers')} style={{ ...styles.menuBtn, backgroundColor: activeTab === 'find_workers' ? 'var(--main-color)' : '#34495e' }}>🔍 Ishchi Qidirish {!isPro && '🔒'}</button>}
-        {user.role === 'worker' && <button onClick={() => setActiveTab('job_feed')} style={{ ...styles.menuBtn, backgroundColor: activeTab === 'job_feed' ? 'var(--main-color)' : '#34495e' }}>🗂️ Ish E'lonlari</button>}
-        {user.role === 'worker' && <button onClick={() => setActiveTab('my_requests')} style={{ ...styles.menuBtn, backgroundColor: activeTab === 'my_requests' ? 'var(--main-color)' : '#34495e' }}>📩 Kelgan Takliflar ({myApplications.filter(a => a.status === 'pending').length}) {!isPro && '🔒'}</button>}
-        <button onClick={() => setActiveTab('report')} style={{ ...styles.menuBtn, backgroundColor: activeTab === 'report' ? 'var(--main-color)' : '#34495e' }}>🚨 Shikoyat Berish</button>
-        <button onClick={onLogout} style={styles.logoutBtn}>Chiqish</button>
-      </div>
+      {/* ===== MOBIL: SIDEBAR OVERLAY ===== */}
+      {isMobile && sidebarOpen && (
+        <>
+          <div onClick={() => setSidebarOpen(false)} style={styles.overlay} />
+          <div style={{ ...styles.sidebar, ...styles.mobileSidebar }}>
+            <SidebarContent />
+          </div>
+        </>
+      )}
 
-      {/* ASOSIY KONTENT */}
-      <div style={styles.mainContent}>
+      {/* ===== DESKTOP: DOIMIY SIDEBAR ===== */}
+      {!isMobile && (
+        <div style={styles.sidebar}>
+          <SidebarContent />
+        </div>
+      )}
 
-        {/* PRO emas eslatmasi */}
+      {/* ===== DINAMIK FOYDALANUVChI EKRONI (PADDING TUZATILDI) ===== */}
+      <div style={{
+        ...styles.mainContent,
+        paddingTop: isMobile ? '76px' : '30px',
+        paddingLeft: isMobile ? '16px' : '300px',
+        paddingRight: isMobile ? '16px' : '30px',
+      }}>
+
         {!isPro && (
           <div style={styles.proWarningBanner}>
             🔒 Siz hozir <b>Bepul</b> rejimdasiz. Ko'rish mumkin, lekin ish qo'shish, taklif yuborish va ariza qabul qilish uchun <b onClick={() => setShowProModal(true)} style={{ cursor: 'pointer', textDecoration: 'underline' }}>👑 PRO</b> kerak.
@@ -642,7 +707,7 @@ function Dashboard({ user, setUser, onLogout, dec, logoText, currentHoliday }) {
                     {appItem && appItem.status === 'declined' && <button style={{ ...styles.actionButton, backgroundColor: '#e74c3c', width: '100%', padding: '10px', marginTop: '10px', cursor: 'not-allowed' }} disabled>❌ Rad etdi</button>}
                     {appItem && appItem.status === 'accepted' && (
                       <div style={{ marginTop: '10px', borderTop: '1px solid #eee', paddingTop: '10px' }}>
-                        <p style={{ color: '#2ecc71', fontWeight: 'bold', margin: '5px 0', fontSize: '13px' }}>✅ Taklif qabul qilingan!</p>
+                        <p style={{ color: '#2ecc71', fontWeight: 'bold', margin: '5px 0', fontSize: '13px' }}>✅ Taklif qabul qimen!</p>
                         <div style={{ display: 'flex', gap: '5px' }}>
                           <button onClick={() => openTelegram(w.telegramLink)} style={{ ...styles.actionButton, backgroundColor: '#24A1DE', flex: 1, padding: '8px' }}>💬 Telegram</button>
                           <button onClick={() => openPhone(w.phone)} style={{ ...styles.actionButton, backgroundColor: '#34495e', flex: 1, padding: '8px' }}>📞 Tel</button>
@@ -786,7 +851,6 @@ function AdminPanel({ onLogout, currentHoliday, logoText }) {
       if (data) setUsersList(Object.keys(data).map(key => ({ id: key, ...data[key] })));
       else setUsersList([]);
     });
-    // Mavjud sozlamalarni yuklash
     get(ref(db, 'settings/theme')).then(snap => {
       if (snap.exists()) {
         const d = snap.val();
@@ -807,14 +871,12 @@ function AdminPanel({ onLogout, currentHoliday, logoText }) {
       primaryColor, backgroundColor, sidebarColor, textColor,
       fontFamily: selectedFont, holiday, logoText: logoInput
     });
-    // Darhol tatbiq etish
     document.documentElement.style.setProperty('--main-color', primaryColor);
     document.documentElement.style.setProperty('--bg-color', backgroundColor);
     document.documentElement.style.setProperty('--sidebar-color', sidebarColor);
     document.documentElement.style.setProperty('--text-color', textColor);
     document.body.style.fontFamily = `'${selectedFont}', sans-serif`;
 
-    // Google font yuklash
     const systemFonts = ['Arial', 'Tahoma', 'Georgia', 'Verdana', 'Times New Roman'];
     if (!systemFonts.includes(selectedFont)) {
       let link = document.getElementById('google-font-link');
@@ -840,7 +902,6 @@ function AdminPanel({ onLogout, currentHoliday, logoText }) {
       </div>
       <div style={styles.adminGrid}>
 
-        {/* SHIKOYATLAR */}
         <div style={{ ...styles.adminCard, borderTop: '5px solid #e74c3c' }}>
           <h3>🚨 Shikoyatlar ({reports.length})</h3>
           {reports.length === 0 ? <p>Hozircha shikoyatlar kelmagan.</p> : reports.map(rep => (
@@ -866,7 +927,6 @@ function AdminPanel({ onLogout, currentHoliday, logoText }) {
           ))}
         </div>
 
-        {/* PRO BERISH */}
         <div style={{ ...styles.adminCard, borderTop: '5px solid #f1c40f' }}>
           <h3>👑 PRO Rejimni Faollashtirish (30 kunlik)</h3>
           <div style={{ display: 'flex', gap: '5px', marginBottom: '15px' }}>
@@ -891,7 +951,6 @@ function AdminPanel({ onLogout, currentHoliday, logoText }) {
           </div>
         </div>
 
-        {/* STIL SOZLAMALARI */}
         <div style={{ ...styles.adminCard, borderTop: '5px solid #2ecc71' }}>
           <h3>🎨 Stil & Bayram Sozlamalari</h3>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
@@ -954,7 +1013,7 @@ function AdminPanel({ onLogout, currentHoliday, logoText }) {
   );
 }
 
-// ===================== STYLES =====================
+// ===================== STYLES (100% RESPONSIVE) =====================
 const styles = {
   loginContainer: { display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh', backgroundColor: 'var(--bg-color, #F7F8FA)', padding: '15px' },
   loginCard: { backgroundColor: '#fff', padding: '30px', borderRadius: '16px', boxShadow: '0 10px 30px rgba(0,0,0,0.08)', width: '100%', maxWidth: '440px', textAlign: 'center' },
@@ -965,8 +1024,35 @@ const styles = {
   loginNote: { background: '#fff9db', border: '1px solid #ffe066', borderRadius: '8px', padding: '12px', fontSize: '11px', textAlign: 'left', color: '#666', lineHeight: '1.5' },
   button: { width: '100%', padding: '12px', borderRadius: '8px', border: 'none', backgroundColor: 'var(--main-color, #1D9E75)', color: '#fff', fontSize: '16px', cursor: 'pointer', fontWeight: 'bold', marginTop: '5px' },
   errorText: { color: '#ef4444', fontSize: '13px', margin: '0' },
-  dashboardContainer: { display: 'flex', height: '100vh', backgroundColor: 'var(--bg-color, #F7F8FA)' },
-  sidebar: { width: '270px', backgroundColor: 'var(--sidebar-color, #1e293b)', padding: '20px', display: 'flex', flexDirection: 'column', gap: '10px', overflowY: 'auto' },
+  dashboardContainer: { display: 'flex', height: '100vh', backgroundColor: 'var(--bg-color, #F7F8FA)', position: 'relative' },
+
+  // MOBIL NAVBAR SOZLAMALARI
+  mobileTopBar: {
+    position: 'fixed', top: 0, left: 0, right: 0, zIndex: 1000,
+    backgroundColor: 'var(--sidebar-color, #1e293b)',
+    padding: '0 16px',
+    height: '56px',
+    display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+    boxShadow: '0 2px 8px rgba(0,0,0,0.2)',
+  },
+  burgerBtn: {
+    background: 'none', border: 'none', cursor: 'pointer',
+    padding: '8px', borderRadius: '8px',
+    display: 'flex', alignItems: 'center', justifyContent: 'center',
+    color: '#fff',
+  },
+  overlay: {
+    position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
+    backgroundColor: 'rgba(0,0,0,0.5)', zIndex: 1001,
+  },
+  mobileSidebar: {
+    position: 'fixed', top: 0, left: 0, bottom: 0,
+    width: '280px', zIndex: 1002,
+    overflowY: 'auto',
+    boxShadow: '4px 0 20px rgba(0,0,0,0.3)',
+  },
+
+  sidebar: { width: '270px', backgroundColor: 'var(--sidebar-color, #1e293b)', padding: '20px', display: 'flex', flexDirection: 'column', gap: '10px', overflowY: 'auto', position: 'fixed', top: 0, bottom: 0, left: 0 },
   logoRowSidebar: { display: 'flex', justifyContent: 'center', alignItems: 'center', marginBottom: '10px' },
   sideAvatar: { width: '70px', height: '70px', borderRadius: '50%', objectFit: 'cover', border: '2px solid var(--main-color)' },
   sideNoAvatar: { width: '70px', height: '70px', borderRadius: '50%', backgroundColor: 'var(--main-color)', color: '#fff', display: 'flex', justifyContent: 'center', alignItems: 'center', fontSize: '28px', fontWeight: 'bold', margin: '0 auto' },
@@ -975,11 +1061,14 @@ const styles = {
   getProBtn: { width: '100%', padding: '8px', border: 'none', borderRadius: '6px', backgroundColor: '#f1c40f', color: '#000', cursor: 'pointer', fontWeight: 'bold', marginTop: '8px', fontSize: '12px' },
   menuBtn: { width: '100%', padding: '11px 15px', border: 'none', borderRadius: '8px', color: '#fff', cursor: 'pointer', textAlign: 'left', fontSize: '14px', fontWeight: '500', transition: 'all 0.2s' },
   logoutBtn: { width: '100%', padding: '11px', border: 'none', borderRadius: '8px', backgroundColor: '#ef4444', color: '#fff', cursor: 'pointer', marginTop: 'auto', fontWeight: 'bold' },
-  mainContent: { flex: 1, padding: '30px', overflowY: 'auto' },
+
+  // MAIN CONTENT DINAMIK RESPONSIVE PADDING
+  mainContent: { flex: 1, overflowY: 'auto', boxSizing: 'border-box' },
+
   proWarningBanner: { backgroundColor: '#fff9db', border: '1px solid #ffe066', borderRadius: '10px', padding: '12px 16px', marginBottom: '20px', fontSize: '13px', color: '#7d6608' },
   proBlockMsg: { backgroundColor: '#fff5f5', border: '1px solid #ffcccc', borderRadius: '8px', padding: '10px 14px', marginBottom: '15px', fontSize: '13px', color: '#c0392b' },
   welcomeCard: { backgroundColor: '#fff', padding: '25px', borderRadius: '12px', boxShadow: '0 4px 12px rgba(0,0,0,0.03)' },
-  cardContainer: { backgroundColor: '#fff', padding: '25px', borderRadius: '12px', maxWidth: '600px', boxShadow: '0 4px 12px rgba(0,0,0,0.03)' },
+  cardContainer: { backgroundColor: '#fff', padding: '25px', borderRadius: '12px', width: '100%', maxWidth: '600px', boxShadow: '0 4px 12px rgba(0,0,0,0.03)', boxSizing: 'border-box' },
   dashboardForm: { display: 'flex', flexDirection: 'column', gap: '12px' },
   label: { fontSize: '13px', fontWeight: '600', color: '#475569', marginBottom: '-4px' },
   inputField: { padding: '11px 15px', borderRadius: '8px', border: '1px solid #cbd5e1', fontSize: '14px', outline: 'none' },
@@ -987,9 +1076,9 @@ const styles = {
   fileInput: { fontSize: '13px', color: '#64748b' },
   avatarPreview: { width: '80px', height: '80px', borderRadius: '50%', objectFit: 'cover', marginTop: '10px' },
   saveProfileBtn: { padding: '12px', border: 'none', borderRadius: '8px', backgroundColor: '#2ecc71', color: '#fff', fontWeight: 'bold', cursor: 'pointer' },
-  filterInput: { flex: 1, minWidth: '250px', padding: '11px 15px', borderRadius: '8px', border: '1px solid #cbd5e1', fontSize: '14px', outline: 'none' },
+  filterInput: { flex: 1, minWidth: '200px', padding: '11px 15px', borderRadius: '8px', border: '1px solid #cbd5e1', fontSize: '14px', outline: 'none' },
   selectFilter: { padding: '11px', borderRadius: '8px', border: '1px solid #cbd5e1', fontSize: '14px', outline: 'none', cursor: 'pointer' },
-  workersGrid: { display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: '20px', marginTop: '15px' },
+  workersGrid: { display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '20px', marginTop: '15px' },
   workerCard: { backgroundColor: '#fff', padding: '20px', borderRadius: '12px', boxShadow: '0 4px 15px rgba(0,0,0,0.03)', borderTop: '4px solid var(--main-color)', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' },
   cardAvatar: { width: '45px', height: '45px', borderRadius: '50%', objectFit: 'cover' },
   cardNoAvatar: { width: '45px', height: '45px', borderRadius: '50%', backgroundColor: 'var(--main-color)', color: '#fff', display: 'flex', justifyContent: 'center', alignItems: 'center', fontSize: '18px', fontWeight: 'bold' },
@@ -998,14 +1087,14 @@ const styles = {
   reviewForm: { display: 'flex', flexDirection: 'column', gap: '5px', marginTop: '8px', background: '#f8fafc', padding: '8px', borderRadius: '6px' },
   actionButton: { border: 'none', borderRadius: '8px', color: '#fff', fontWeight: 'bold', cursor: 'pointer', transition: 'background 0.2s' },
   modalOverlay: { position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.5)', display: 'flex', justifyContent: 'center', alignItems: 'center', padding: '15px', zIndex: 9999 },
-  modalContent: { backgroundColor: '#fff', padding: '30px', borderRadius: '16px', maxWidth: '480px', width: '100%', boxShadow: '0 20px 40px rgba(0,0,0,0.15)' },
+  modalContent: { backgroundColor: '#fff', padding: '30px', borderRadius: '16px', maxWidth: '480px', width: '100%', boxShadow: '0 20px 40px rgba(0,0,0,0.15)', boxSizing: 'border-box' },
   cardDetails: { background: '#f8fafc', padding: '15px', borderRadius: '8px', fontSize: '13px', borderLeft: '4px solid #f1c40f', lineHeight: '1.8', margin: '10px 0' },
   modalTelegramBtn: { flex: 2, padding: '12px', border: 'none', borderRadius: '8px', backgroundColor: '#24A1DE', color: '#fff', fontWeight: 'bold', cursor: 'pointer', fontSize: '13px' },
   modalCloseBtn: { flex: 1, padding: '12px', border: '1px solid #cbd5e1', borderRadius: '8px', background: '#fff', color: '#64748b', cursor: 'pointer', fontWeight: 'bold' },
   adminContainer: { padding: '30px', backgroundColor: '#f1f5f9', minHeight: '100vh' },
   adminHeader: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '2px solid #e2e8f0', paddingBottom: '15px' },
   adminLogoutBtn: { border: 'none', borderRadius: '8px', cursor: 'pointer', fontWeight: 'bold', color: '#fff', backgroundColor: '#ef4444', padding: '8px 15px' },
-  adminGrid: { display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(350px, 1fr))', gap: '25px', marginTop: '20px' },
+  adminGrid: { display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '25px', marginTop: '20px' },
   adminCard: { backgroundColor: '#fff', padding: '25px', borderRadius: '12px', boxShadow: '0 4px 15px rgba(0,0,0,0.03)' },
   colorInput: { width: '100%', height: '40px', border: '1px solid #cbd5e1', borderRadius: '8px', cursor: 'pointer', padding: '0', background: 'none' },
   saveStyleBtn: { padding: '12px', backgroundColor: '#2ecc71', color: '#fff', border: 'none', borderRadius: '8px', fontWeight: 'bold', cursor: 'pointer', marginTop: '10px' },
